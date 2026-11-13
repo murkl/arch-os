@@ -33,6 +33,14 @@ if [ ! -e "${BTRFS_TOP}/@" ] && [ -d "${BTRFS_TOP}/@.new" ]; then
     echo "finished an interrupted rollback"
 fi
 
+# One interrupted earlier, with the old @ still in place: the subvolumes it
+# carried go back before its new @ goes.
+if [ -e "${BTRFS_TOP}/@.new" ]; then
+    carry_subvolumes @.new @
+    btrfs subvolume delete --recursive "${BTRFS_TOP}/@.new"
+    echo "undid an interrupted rollback"
+fi
+
 present="$(btrfs subvolume list "$BTRFS_TOP" | awk '{ print $NF }')"
 missing=()
 while read -r subvolume _; do

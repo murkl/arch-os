@@ -25,7 +25,6 @@ run arch-chroot "$MNT" chsh -s /usr/bin/zsh "$ARCH_OS_USERNAME"
 
 # Fetched, so the prompt improves without a release, and the script keeps what
 # was fetched. A preset otherwise.
-run mkdir -p "${MNT}/root/.config"
 theme=https://raw.githubusercontent.com/murkl/starship-theme-arch-os/refs/heads/main/starship.toml
 if prompt="$(fetch_url --connect-timeout 5 --max-time 30 "$theme")" && [ -n "$prompt" ]; then
     printf '%s\n' "$prompt" | write_file "${home}/.config/starship.toml"

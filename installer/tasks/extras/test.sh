@@ -1,4 +1,3 @@
-arch-chroot "$MNT" systemctl is-enabled power-profiles-daemon.service >/dev/null
 arch-chroot "$MNT" systemctl is-enabled cups.socket >/dev/null
 arch-chroot "$MNT" systemctl is-enabled fwupd-refresh.timer >/dev/null
 

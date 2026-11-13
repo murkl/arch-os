@@ -11,7 +11,9 @@ arch-chroot "$MNT" ssh-keygen -l -f "$keys" >/dev/null
 # real ones. Outside /tmp, which arch-chroot mounts afresh.
 dir="$(mktemp -d "${MNT}/var/tmp/sshd.XXXXXX")"
 ssh-keygen -q -t ed25519 -N '' -f "${dir}/host"
-effective="$(arch-chroot "$MNT" sshd -T -h "${dir#"$MNT"}/host")"
+status=0
+effective="$(arch-chroot "$MNT" sshd -T -h "${dir#"$MNT"}/host")" || status=$?
 rm -rf "$dir"
+[ "$status" -eq 0 ]
 grep -qix 'passwordauthentication no' <<<"$effective"
 grep -qix 'kbdinteractiveauthentication no' <<<"$effective"

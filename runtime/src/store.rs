@@ -77,17 +77,6 @@ impl Store {
             .unwrap_or_default()
     }
 
-    /// An action's answer a script wrote into the answer file, read from the file and held
-    /// nowhere else.
-    pub fn read(&self, name: &str) -> Option<String> {
-        let raw = std::fs::read(&self.path).ok()?;
-        String::from_utf8_lossy(&raw)
-            .lines()
-            .filter_map(parse_line)
-            .rfind(|(k, _)| k == name)
-            .map(|(_, v)| v)
-    }
-
     /// Answer lookup for placeholders and conditions.
     pub fn getter(&self) -> impl Fn(&str) -> String + '_ {
         |name| self.get(name).to_string()
@@ -428,18 +417,6 @@ mod tests {
         assert_eq!(driver.kind, Kind::OpenList);
         assert_eq!(s.invalid(driver, "nouveau"), None);
         assert_eq!(s.invalid(driver, "free"), None);
-    }
-
-    #[test]
-    fn reads_what_a_script_answered_under_no_setting() {
-        let s = store("read");
-        std::fs::write(
-            s.path(),
-            "TUX_HOST='box' # Hostname\nTUX_URL='https://x/1'\n",
-        )
-        .unwrap();
-        assert_eq!(s.read("TUX_URL").as_deref(), Some("https://x/1"));
-        assert_eq!(s.read("TUX_NONE"), None);
     }
 
     #[test]

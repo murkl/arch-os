@@ -74,7 +74,7 @@ Stages run in order, `needs:` orders the tasks within one.
 | `data/languages` | Language, or locale where it differs | Keymap, xkb layouts, console font |
 | `data/countries` | Territory of the locale | Time zone, reflector's country name |
 
-The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password. The live system's keymap is suggested, else the interface language's. A desktop layout that cannot type Latin gets `us` second, for passwords at the login screen.
+The console keyboard is asked `first` and loaded at once: a password typed on the wrong layout is not the password. The interface language's keymap is suggested. A desktop layout that cannot type Latin gets `us` second, for passwords at the login screen.
 
 ## Extending
 
@@ -83,7 +83,7 @@ The console keyboard is asked `first` and loaded at once: a password typed on th
 | Option | A row under `settings:`, list or suggestion as a function in `lib.sh`. Dependent tasks get `when:` |
 | Task | An entry under its stage in `module.yaml` and `tasks/<id>/task.sh`, plus `test.sh` where a result can be read back. Each change through `run`, `run_sh` or `write_file`. **[➜ Commands](../docs/CONTRIBUTING.md#commands)** |
 | Check, row or way out | An entry under `actions:` with its `lib.sh` function, named under `requires:`, `dashboard:` or `on:`. Shared with the Recovery: `product.yaml` |
-| Profile | An entry under `presets:`. A fetched one names its action with `action:` |
+| Profile | An entry under `presets:` |
 | Language | **[➜ Contributing](../docs/CONTRIBUTING.md#adding-a-language)** |
 
 ## Answers

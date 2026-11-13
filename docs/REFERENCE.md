@@ -62,7 +62,7 @@ UEFI, GPT, whole disk: Arch OS is the only system on it. At least 16 GiB, 32 GiB
 | `@tmp` | `/var/tmp` | Scratch space, `chmod 1777` before systemd-tmpfiles runs |
 
 - A snapshot of `@` excludes nested subvolumes, so a rollback keeps all six. One created inside `@` later, such as a container image, moves to the new `@`
-- `defaults,noatime,compress=zstd:1`, as on Fedora. Level 1 costs an older CPU far less per write than 3, at almost the same ratio. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)**
+- `noatime,compress=zstd:1`, as on Fedora. Level 1 costs an older CPU far less per write than 3, at almost the same ratio. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)**
 - Defined once in `lib.sh`. The Installer creates every subvolume, the Recovery opens only a disk with all of them and leaves others untouched
 
 ## Boot Chain
@@ -110,8 +110,8 @@ flowchart LR
 | `rootflags=subvol=@ rootfstype=btrfs` | Root subvolume |
 | `zswap.enabled=0` | Conflicts with zram |
 | `panic=10` | A panic counts as a failed start |
-| `quiet splash loglevel=3 …` | **[Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. `vt.global_cursor_default=0` hides the cursor, `/etc/issue.d/cursor.issue` restores it at each login. `RebootWatchdogSec=off` in `/etc/systemd/system.conf.d/10-arch-os.conf`: a watchdog armed for the reboot prints `watchdog did not stop!` over the splash |
-| `plymouth.ignore-serial-consoles` | Every VM has a serial console, which switches Plymouth to text mode, password prompt included |
+| `quiet loglevel=3 …` | **[Silent boot](https://wiki.archlinux.org/title/Silent_boot)**. `vt.global_cursor_default=0` hides the cursor, `/etc/issue.d/cursor.issue` restores it at each login. `RebootWatchdogSec=off` in `/etc/systemd/system.conf.d/10-arch-os.conf`: a watchdog armed for the reboot prints `watchdog did not stop!` over the splash |
+| `splash plymouth.ignore-serial-consoles` | With the boot splash. Every VM has a serial console, which switches Plymouth to text mode, password prompt included |
 | `plymouth.use-simpledrm=0` | With encryption: the password prompt waits for the graphics driver instead of appearing twice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)** |
 | `plymouth.splash-delay=3` | With encryption: splash and password prompt appear together. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
 
@@ -124,7 +124,7 @@ base systemd keyboard autodetect microcode modconf kms sd-vconsole block [sd-enc
 | Hook | Why |
 | --- | --- |
 | `keyboard` before `autodetect` | Every keyboard driver, not only the one present during the installation |
-| `microcode` | `intel-ucode` or `amd-ucode`, from `/proc/cpuinfo` |
+| `microcode` | `intel-ucode` or `amd-ucode`, from `/proc/cpuinfo`. Not in a virtual machine, whose microcode is its host's |
 | `kms` | Plymouth needs a driver to draw on, so the open graphics drivers go in. With NVIDIA as the only card, `31-` removes it, or nouveau would sit beside NVIDIA's modules. **[➜ Arch Wiki](https://wiki.archlinux.org/title/NVIDIA#Early_loading)** |
 | No `fsck` | `fsck.btrfs` does nothing at boot |
 
@@ -143,7 +143,7 @@ Only with disk encryption. Without it the disk is readable anyway, and only a UK
 - sbctl's mkinitcpio hook signs each boot image as it is built. `sbctl list-files` omits them, since `sbctl sign -s` records no file already signed
 - The kernel the UKIs are built from lies in `/var/lib/arch-os/`, on the encrypted root. On the EFI partition anyone could swap it before the next rebuild signs it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Unified_kernel_image#.preset_file)**
 - fwupd's updater is signed as `fwupdx64.efi.signed`, and `DisableShimForSecureBoot` lets fwupd start it without shim, which Arch does not ship. For fwupd installed later: `sudo sbctl sign -s -o /usr/lib/fwupd/efi/fwupdx64.efi.signed /usr/lib/fwupd/efi/fwupdx64.efi` and `sudo fwupdtool modify-config uefi_capsule DisableShimForSecureBoot true`. **[➜ fwupd](https://github.com/fwupd/fwupd/blob/main/plugins/uefi-capsule/README.md)**
-- Keys enroll only in **setup mode**, which differs from "Secure Boot disabled". `-m` keeps Microsoft's certificates, `-f` the firmware's own, which firmware signed by its maker needs. Where sbctl refuses `-f`, `-m` alone follows. A failure is logged, the machine still boots
+- Keys enroll only in **setup mode**, which differs from "Secure Boot disabled". `-m` keeps Microsoft's certificates, `-f` the firmware's own, which firmware signed by its maker needs. Where sbctl refuses `-f`, `-m` alone follows. Keys that did not enroll show as a warning on the last page, the machine still boots
 
 #### Turning It On
 
@@ -343,7 +343,7 @@ Snapper takes a snapshot before and after every package transaction through `sna
 | Setting | Value | Why |
 | --- | --- | --- |
 | Timeline | Off | Between transactions only data changes. A timeline keeps every version of disk images and databases, which openSUSE's root configuration also avoids |
-| `NUMBER_LIMIT` | 10, 5 important | Snapper's defaults filled 70 GiB for a 35 GiB system |
+| `NUMBER_LIMIT` | 10 | Snapper's defaults filled 70 GiB for a 35 GiB system |
 | `ALLOW_GROUPS` | None | snapperd runs as root, so an allowed group could delete every snapshot without password. `sudo snapper list` lists them |
 | Cleanup | `snapper-cleanup.timer` | Enforces the limits |
 
@@ -399,6 +399,6 @@ Runs as a kiosk: tty1 belongs to it, no console has a login, a serial one includ
 - From the ISO for the disk's Recovery where it is older or no longer starts, the way back after an interrupted update
 - Download, checksum and size are checked before the partition is touched. An encrypted system is opened, and where it has `sbctl` its keys sign the new image
 - Writes the partition, reads it back, then replaces the boot image. After a power cut in between, the system starts as before
-- The partition keeps its UUID and stays hidden from the file manager
+- The partition keeps its PARTUUID and stays hidden from the file manager
 
 **Note:** _Releases before 2.1 are not supported. A 2.0 Recovery with Secure Boot and disk encryption needs 4 GiB of memory to update itself. With less, the ISO updates it._

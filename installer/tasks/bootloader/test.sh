@@ -51,6 +51,18 @@ fi
 if [ "$(boot_kind)" = image ]; then
     [ "$(sed -n 's/^options[[:space:]]*//p' "${entries}/main+${BOOT_TRIES}.conf")" = "$(<"${MNT}/etc/kernel/cmdline")" ]
 fi
+# It names this disk's system partition, read another way than the task did:
+# a lookup that came back empty leaves a line that starts nothing.
+cmdline="$(<"${MNT}/etc/kernel/cmdline") "
+if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
+    uuid="$(cryptsetup luksUUID "$(system_partition "$ARCH_OS_DISK")")"
+    [ -n "$uuid" ]
+    grep -qF " rd.luks.name=${uuid}=cryptroot " <<<"$cmdline"
+else
+    uuid="$(blkid -p -s PART_ENTRY_UUID -o value "$(system_partition "$ARCH_OS_DISK")")"
+    [ -n "$uuid" ]
+    grep -qF " root=PARTUUID=${uuid} " <<<"$cmdline"
+fi
 listed="$(arch-chroot "$MNT" bootctl --esp-path=/boot list --json=short)"
 grep -qF '"id":"main.conf"' <<<"$listed"
 grep -qF '"id":"main-fallback.conf"' <<<"$listed"

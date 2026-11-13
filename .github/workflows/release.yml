@@ -43,7 +43,7 @@ jobs:
     # Above the boot scripts' own limits, so they fail first with a diagnosis.
     timeout-minutes: 180
     container:
-      image: archlinux:base-devel-20261011.0.609700@sha256:061679925e5d5028f2df9395d441ce6c4b9accf0157ff3486c06b6962e014ef1
+      image: archlinux:base-devel-20261108.0.623074@sha256:fa2d4ce3310ddd90a4208e5168be8ad367da5129af1245f38fd2d803bcbe3239
       # pacstrap mounts inside the airootfs, and qemu without KVM is too slow.
       options: --privileged --device /dev/kvm
     permissions:
@@ -53,7 +53,7 @@ jobs:
     steps:
       - run: |
           pacman -Syu --needed --noconfirm git make rust archiso systemd-ukify diffutils \
-            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
+            kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh shellcheck
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

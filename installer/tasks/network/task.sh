@@ -41,6 +41,11 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
         args+=(wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$secret")
     fi
     keyfile="${MNT}/etc/NetworkManager/system-connections/${name}.nmconnection"
-    (umask 077 && arch-chroot "$MNT" nmcli --offline connection add "${args[@]}" >"$keyfile")
-    echo "carried over Wi-Fi ${ssid}"
+    # A profile nmcli refuses costs that network, not the installation.
+    if (umask 077 && arch-chroot "$MNT" nmcli --offline connection add "${args[@]}" >"$keyfile"); then
+        echo "carried over Wi-Fi ${ssid}"
+    else
+        rm -f "$keyfile"
+        echo "Wi-Fi ${ssid} not carried over" >&2
+    fi
 done

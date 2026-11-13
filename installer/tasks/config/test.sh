@@ -1,5 +1,7 @@
 grep -qx "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" "${MNT}/etc/locale.conf"
-[ -f "${MNT}/etc/localtime" ]
+# Inside the new system: from outside, the absolute link resolves into the live
+# system.
+arch-chroot "$MNT" test -f /etc/localtime
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
 arch-chroot "$MNT" systemctl is-enabled btrfs-scrub@-.timer >/dev/null
 arch-chroot "$MNT" systemctl is-enabled paccache.timer >/dev/null

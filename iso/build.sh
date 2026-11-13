@@ -146,8 +146,6 @@ fetch_theme() {
 install_bootsplash() {
     local profile="$1" hooks="$1/airootfs/etc/mkinitcpio.conf.d/archiso.conf"
     local theme="$1/airootfs/usr/share/plymouth/themes/arch-os"
-    grep -qxF "plymouth" "${profile}/packages.x86_64" || echo "plymouth" >>"${profile}/packages.x86_64"
-
     mkdir -p "${profile}/airootfs/usr/share/plymouth/themes"
     cp -rT "${PLYMOUTH_THEME_SRC}" "$theme"
 
@@ -190,8 +188,12 @@ start_on_tty1() {
         "$1/airootfs/etc/systemd/system/multi-user.target.wants/arch-os.service"
 }
 
-# Also lands in the image's os-release.
-name_image() { profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\""; }
+# Name and version also land in the image's os-release. The stock profile names
+# Arch Linux as publisher.
+name_image() {
+    profiledef "$1" "iso_name=\"$2\"" "iso_version=\"${VERSION}\"" \
+        'iso_publisher="Arch OS <https://github.com/murkl/arch-os>"'
+}
 
 # ////////////////////////////////////////////////////////////////////////////
 # BUILD

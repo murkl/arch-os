@@ -90,13 +90,20 @@ if ! grep -qx multilib <<<"$repos"; then
     packages="$(grep -v '^lib32-' <<<"$packages")"
 fi
 mapfile -t names <<<"$packages"
-if ! said="$(pacman -Sp --print-format %n "${names[@]}" 2>&1 >/dev/null)"; then
-    missing="$(sed -n 's/^error: target not found: //p' <<<"$said")"
-    [ -n "$missing" ] || complain "packages: pacman failed: ${said}"
+said="$(mktemp)"
+if resolved="$(pacman -Sp --print-format %n "${names[@]}" 2>"$said")"; then
+    # A renamed or replaced package still resolves, to the one that provides it.
+    while read -r name; do
+        grep -qxF "$name" <<<"$resolved" || complain "packages: ${name} is no package, another one provides or replaces it"
+    done <<<"$packages"
+else
+    missing="$(sed -n 's/^error: target not found: //p' "$said")"
+    [ -n "$missing" ] || complain "packages: pacman failed: $(<"$said")"
     while read -r name; do
         [ -z "$name" ] || complain "packages: ${name} is in no repository this system syncs"
     done <<<"$missing"
 fi
+rm -f "$said"
 
 [ "$status" -eq 0 ] && echo "every name in languages and countries is one this system has, and $(wc -l <<<"$packages") packages are in the repositories"
 exit "$status"

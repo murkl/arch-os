@@ -203,7 +203,7 @@ The type sets the widget and the allowed keys:
 | `options` | Answers, inline |
 | `options-from` | Prints the answers, one per line. `value<TAB>label` stores the value and shows the label |
 | `filter` | Filter box: `collapsed` behind `f`, or `open` |
-| `default` | Initial answer, such as `true`, `auto` or `pc105` |
+| `default` | Initial answer, such as `true`, `auto` or `none` |
 | `prefill` | Prints a suggestion. Still asked |
 | `value-from` | Prints the value instead of asking. Never asked, never on the dashboard, never stored |
 | `pattern` | Regular expression the answer must match |
@@ -212,7 +212,7 @@ The type sets the widget and the allowed keys:
 | `apply` | Applies the answer to this machine, such as a keymap |
 
 - `true` and `false` show as Yes and No
-- `none` and an empty answer show as — on the dashboard
+- `none` shows as None in a list. `none` and an empty answer show as — on the dashboard
 - A password is asked right before the run, used and forgotten
 - `value-from` runs when the module opens and on every answer change
 - An `options-from` that fails shows its error on the question

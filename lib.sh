@@ -168,16 +168,6 @@ check_online() {
 
 has_wifi_card() { compgen -G '/sys/class/ieee80211/*' >/dev/null; }
 
-# Online through an interface without a wireless card. 192.0.2.1 is a
-# documentation address, the route lookup sends nothing.
-online_by_cable() {
-    local route device
-    check_online || return 1
-    route="$(ip -o route get 192.0.2.1)" || return 1
-    device="$(awk '{ for (i = 1; i < NF; i++) if ($i == "dev") print $(i + 1) }' <<<"$route")"
-    [ -n "$device" ] && [ ! -e "/sys/class/net/${device}/phy80211" ]
-}
-
 # The Wi-Fi station, or nothing. awk reads to the end, since a closed pipe fails
 # pipefail.
 wifi_station() {
@@ -264,7 +254,7 @@ export CORE_GIB=16
 export DESKTOP_GIB=32
 
 # The btrfs layout: docs/REFERENCE.md
-export BTRFS_OPTS="defaults,noatime,compress=zstd:1"
+export BTRFS_OPTS="noatime,compress=zstd:1"
 
 btrfs_subvolumes() {
     printf '%s\t%s\n' \
@@ -679,7 +669,7 @@ chroot_pacman_install() {
             confirmed
             return 0
         fi
-        sleep "$RETRY_WAIT"
+        if [ "$i" -lt "$RETRIES" ]; then sleep "$RETRY_WAIT"; fi
     done
     echo "pacman failed after ${RETRIES} attempts: $*" >&2
     check_online || exit "$EXIT_OFFLINE"
@@ -734,9 +724,9 @@ chroot_aur_install() {
     [ "$jobs" -gt "$cores" ] && jobs="$cores"
 
     dir="$(mktemp -u "/home/${ARCH_OS_USERNAME}/.aur-${repo}.XXXX")"
-    build="rm -rf ${dir} && git clone --depth 1 ${url} ${dir} && cd ${dir}"
-    # Appended to the PKGBUILD's options, so a !lto there stays.
-    build="${build} && printf '\noptions+=(\"!debug\")\n' >>PKGBUILD"
+    # The clone as fetch_url fetches: https only, and a stall ends it.
+    build="rm -rf ${dir} && GIT_ALLOW_PROTOCOL=https git -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=60"
+    build="${build} clone --depth 1 ${url} ${dir} && cd ${dir}"
     # make takes its jobs from a makepkg.conf read last, since makepkg.conf
     # overrides MAKEFLAGS from the environment. cargo reads its variable, and its
     # caches stay in the build directory, not 100 MB in the new home.
@@ -765,7 +755,7 @@ chroot_aur_install() {
             echo "building ${repo} from the AUR stopped after $((AUR_TIMEOUT / 60)) minutes" >&2
             break
         fi
-        sleep "$RETRY_WAIT"
+        if [ "$i" -lt "$AUR_RETRIES" ]; then sleep "$RETRY_WAIT"; fi
     done
     [ "$status" -ne 0 ] || confirmed
 
@@ -908,6 +898,34 @@ mount_esp() {
     esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
     fsck.fat -a "$esp" || allow 1
     mount --mkdir -w -t vfat "$esp" "$1"
+}
+
+# A subvolume inside @, such as a machine or container image, is in no snapshot
+# of it. Each moves from $1 to the same place in $2, which holds an empty
+# directory or nothing. Never through a link, which resolves on the live system.
+# Every place is checked before the first move, so a refusal changes nothing.
+carry_subvolumes() {
+    local to="${BTRFS_TOP}/$2" paths path place
+    paths="$(btrfs subvolume list -o "${BTRFS_TOP}/$1" | sed 's/^ID [0-9]* gen [0-9]* top level [0-9]* path //')"
+    [ -n "$paths" ] || return 0
+    while read -r path; do
+        place="${to}/${path#*/}"
+        if [ "$(realpath -m "$place")" != "$place" ]; then
+            echo "/${path#*/} is a subvolume, and ${2} has a link there" >&2
+            return 1
+        fi
+        if [ -e "$place" ] && [ -z "$(find "$place" -maxdepth 0 -type d -empty)" ]; then
+            echo "/${path#*/} is a subvolume, and ${2} holds something else there" >&2
+            return 1
+        fi
+    done <<<"$paths"
+    while read -r path; do
+        place="${to}/${path#*/}"
+        [ ! -e "$place" ] || rmdir "$place"
+        mkdir -p "$(dirname "$place")"
+        mv -T "${BTRFS_TOP}/${path}" "$place"
+        echo "moved the subvolume /${path#*/} to ${2}"
+    done <<<"$paths"
 }
 
 # Also closes what an earlier run left open. Unmounted first, since a mounted
@@ -1060,10 +1078,14 @@ restart_machine() { systemctl reboot; }
 
 shut_down_machine() { systemctl poweroff; }
 
+# Not online through an interface without a wireless card. 192.0.2.1 is a
+# documentation address, the route lookup sends nothing.
 no_cable() {
-    if online_by_cable; then
-        return 1
-    fi
+    local route device
+    check_online || return 0
+    route="$(ip -o route get 192.0.2.1)" || return 0
+    device="$(awk '{ for (i = 1; i < NF; i++) if ($i == "dev") print $(i + 1) }' <<<"$route")"
+    [ -z "$device" ] || [ -e "/sys/class/net/${device}/phy80211" ]
 }
 
 # ─── The Installer ─────────────────────────────────────────────────────────
@@ -1152,7 +1174,7 @@ secure_boot_off() { [ "$(efi_global SecureBoot)" != 1 ]; }
 # passwords are typed on.
 script_head() {
     local probe=(-dnbro "MODEL,SERIAL,SIZE" "$ARCH_OS_DISK") disk error
-    disk="$(lsblk "${probe[@]}")"
+    disk="$(lsblk "${probe[@]}")" || return
     declare -f on_live_image on_arch_live_image
     error="$(shell_line "Arch Linux live system required. Boot from the Arch OS ISO.")"
     printf 'on_arch_live_image || { echo %s >&2; exit 1; }\n' "$error"
@@ -1266,6 +1288,7 @@ install_recovery_update() {
     if mountpoint -q "$esp_mnt"; then
         umount "$esp_mnt"
     fi
+    rm -f "$tar" "${tar}.part"
     if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
         printf '%s' "$ARCH_OS_RECOVERY_UPDATE_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
         mount_target
@@ -1301,6 +1324,7 @@ install_recovery_update() {
     # A leftover copy takes room the kernel images need. Global, since the EXIT
     # trap reads it after return.
     efi="${esp}${RECOVERY_EFI#/boot}"
+    mkdir -p "$(dirname "$efi")"
     rm -f "${efi}.new"
     trap 'rm -f "${efi}.new"' EXIT
     tar -xOf "$tar" "${stem}/recovery.efi" >"${efi}.new"

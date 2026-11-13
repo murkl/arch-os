@@ -1,4 +1,5 @@
 arch-chroot "$MNT" systemctl is-enabled gdm.service >/dev/null
+arch-chroot "$MNT" systemctl is-enabled power-profiles-daemon.service >/dev/null
 
 # A boot counts as good only once a graphical session is up.
 arch-chroot "$MNT" systemctl is-enabled arch-os-session-up.service >/dev/null

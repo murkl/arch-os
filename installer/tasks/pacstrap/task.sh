@@ -19,8 +19,10 @@ fi
 # base ships no editor, no manuals and no ssh client.
 packages+=("$ARCH_OS_EDITOR" man-db man-pages openssh)
 
+# A guest's microcode is its host's.
+# https://wiki.archlinux.org/title/Microcode
 ucode="$(microcode)"
-[ -n "$ucode" ] && packages+=("$ucode")
+[ -n "$ucode" ] && [ "$ARCH_OS_VIRTUAL_MACHINE" = "false" ] && packages+=("$ucode")
 secure_boot_wanted && packages+=(sbctl)
 
 # Before pacstrap: the kernel install builds an initramfs whose sd-vconsole hook
@@ -44,7 +46,7 @@ for ((i = 1; i <= RETRIES; i++)); do
         confirmed
         break
     fi
-    sleep "$RETRY_WAIT"
+    if [ "$i" -lt "$RETRIES" ]; then sleep "$RETRY_WAIT"; fi
 done
 if [ "$installed" != "true" ]; then
     echo "installing the base system failed after ${RETRIES} attempts" >&2
