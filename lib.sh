@@ -828,6 +828,9 @@ has_command() { arch-chroot "$MNT" test -x "/usr/bin/${1}"; }
 # --man=no, since the live system ships no manuals.
 unit_complaints() { systemd-analyze verify --man=no --root="$MNT" -- "$@" 2>&1; }
 
+# Output, not status: desktop-file-validate exits 0 on a warning.
+desktop_complaints() { arch-chroot "$MNT" desktop-file-validate "$1" 2>&1; }
+
 # sysctl ignores unknown keys silently, so each is checked under /proc/sys.
 sysctl_keys_exist() {
     local keys key

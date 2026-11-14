@@ -21,7 +21,7 @@ make clean                   # remove every build output
 
 ```
 sudo pacman -S --needed make rust shellcheck shfmt zsh yamllint actionlint zizmor \
-    gettext diffutils gitleaks jq kbd terminus-font xkeyboard-config gjs libadwaita archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
+    gettext diffutils gitleaks jq kbd terminus-font xkeyboard-config gjs libadwaita desktop-file-utils archiso systemd-ukify qemu-base edk2-ovmf tesseract tesseract-data-eng openssh
 ```
 
 **Note:** _CI installs the same packages and runs the same commands in an Arch container: green locally is green in CI._
@@ -70,6 +70,7 @@ render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" | write_file "${MNT}
 - No `envsubst`: it reads the environment, fills unset variables with nothing, and without a name list fills every `${…}`
 - Boot entry templates lie in `recovery/data/`, since the Recovery writes them again through `boot_entries`
 - `make lint` fails on a `{ … } >"${MNT}/…"` block
+- `make lint` fails on any output of `desktop-file-validate` for a `.desktop` file, which exits 0 on a warning
 
 A file goes into the program's drop-in directory where one exists. These have none:
 
