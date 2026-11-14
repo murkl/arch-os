@@ -74,6 +74,8 @@ MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/data/zshrc,$(MODULES)))
 # Listed by name, since it has no extension.
 MODULE_PROGRAMS := installer/tasks/housekeeping/data/smartd-notify
 
+MODULE_DESKTOP = $(shell find $(MODULES) -name '*.desktop')
+
 # Everything that can reach the console. READMEs and fastfetch's config target a
 # graphical terminal.
 MODULE_TEXT = product.yaml $(wildcard locales/*.po) $(LIBRARY) $(shell find $(MODULES) -type f ! -name '*.md' ! -name fastfetch.jsonc)
@@ -171,6 +173,8 @@ lint:
 	actionlint
 	zizmor --offline --persona auditor .github
 	msgfmt --check-format -o /dev/null $(wildcard locales/*.po)
+	@out="$$(desktop-file-validate $(MODULE_DESKTOP) 2>&1)" && [ -z "$$out" ] \
+		|| { printf '%s\n' "$$out" >&2; echo "desktop-file-validate exits 0 on a warning, so any output fails" >&2; exit 1; }
 	@! grep -nE 'arch-chroot [^|&;]*[[:space:]](command|type|hash|source|alias)[[:space:]]' \
 		$(MODULE_SCRIPTS) $(MODULE_YAML) \
 		|| { echo "a shell builtin cannot run through arch-chroot, see has_command" >&2; exit 1; }
