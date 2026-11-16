@@ -45,8 +45,12 @@ const GRACE: Duration = if cfg!(test) {
 const GONE: Duration = Duration::from_secs(5);
 const POLL: Duration = Duration::from_millis(50);
 /// Time the output may take to end after its script. A process left behind keeps the pipes open
-/// without an end.
-const DRAIN: Duration = Duration::from_secs(2);
+/// without an end, one that ends shortly after its script is no reason to warn.
+const DRAIN: Duration = if cfg!(test) {
+    Duration::from_secs(2)
+} else {
+    Duration::from_secs(10)
+};
 /// Bytes of an unfinished line shown, a progress bar's end.
 const SHOWN: usize = 4096;
 /// Bytes of an unfinished line kept for the log, above any line a tool prints.

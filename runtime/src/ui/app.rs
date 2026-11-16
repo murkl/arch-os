@@ -220,8 +220,14 @@ impl App {
                 self.ctx.offered.insert(id, yes);
             }
             Msg::Resolved(name, value) => self.ctx.store.set(&name, &value),
+            // A warning only where it cuts work short. Idle, it is the program's ordinary end,
+            // as a machine shutting down brings it.
             Msg::Stop => {
-                crate::warn!("stopped by a signal");
+                if self.pages.iter().any(|(_, p)| p.running()) {
+                    crate::warn!("stopped by a signal");
+                } else {
+                    crate::info!("stopped by a signal");
+                }
                 self.apply(Flow::Quit);
             }
         }
