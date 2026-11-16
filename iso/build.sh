@@ -317,9 +317,12 @@ for unit in $RECOVERY_MASKED_UNITS; do
 done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
 # One line per module, in order, so a single modinfo answers for all of them.
-depends="$(xargs -d '\n' modinfo -F depends <<<"$modules")" || { echo "Error: modinfo cannot read ${recovery_root}" >&2 && exit 1; }
-[ "$(wc -l <<<"$depends")" -eq "$(wc -l <<<"$modules")" ] || { echo "Error: modinfo answered for another number of modules" >&2 && exit 1; }
-deps="$(paste <(cat <<<"$modules") <(cat <<<"$depends"))"
+# The closing word keeps the empty lines of the last modules, which a command
+# substitution drops.
+depends="$(xargs -d '\n' modinfo -F depends <<<"$modules" && echo end)" || { echo "Error: modinfo cannot read ${recovery_root}" >&2 && exit 1; }
+depends="${depends%end}"
+[ "$(printf '%s' "$depends" | wc -l)" -eq "$(wc -l <<<"$modules")" ] || { echo "Error: modinfo answered for another number of modules" >&2 && exit 1; }
+deps="$(paste <(cat <<<"$modules") <(printf '%s' "$depends"))"
 grep -q $'\t.' <<<"$deps" || { echo "Error: modinfo found no dependencies in ${recovery_root}" >&2 && exit 1; }
 lost="$(awk -F'\t' '
     NR == FNR { have[$1] = 1; next }
