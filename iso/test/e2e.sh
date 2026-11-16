@@ -345,6 +345,16 @@ shutdown_installed() {
 
 # The boot came from entry $1, and both entries have their tries back, which any
 # good start restores.
+# The number of the one snapshot of the last good start.
+boot_snapshot() {
+    local numbers
+    numbers="$(as_root snapper --csvout --no-headers list --columns number,userdata |
+        awk -F, '$2 == "arch-os=boot" { print $1 }')"
+    [ "$(wc -w <<<"$numbers")" -eq 1 ] ||
+        fail "the installed system holds not one snapshot of its last good start: ${numbers//$'\n'/ }"
+    printf '%s' "$numbers"
+}
+
 entries_ready() {
     local status listed name
     status="$(as_root bootctl status 2>/dev/null || true)"
@@ -365,11 +375,25 @@ used_up() {
     done
 }
 
+# Runs in the live system, passed with declare -f. udev still probes a device
+# after its unmount, so its queue drains before the close. A device that stays
+# busy names its users.
+close_luks() {
+    udevadm settle --timeout=30
+    cryptsetup close "$1" || {
+        dmsetup info "$1" >&2
+        findmnt --source "/dev/mapper/$1" >&2
+        fuser -vm "/dev/mapper/$1" >&2
+        return 1
+    }
+}
+
 # Lays the installation out with UKIs in EFI/Linux, started as the loader
 # default, and no counted entries.
 images_in_efi_linux() {
     live bash -s <<EOF
 set -euo pipefail
+$(declare -f close_luks)
 printf '%s' '${PASSWORD}' | cryptsetup open ${DISK}2 e2e-old
 mount -t btrfs -o subvol=@ /dev/mapper/e2e-old /mnt
 mount -t vfat ${DISK}1 /mnt/boot
@@ -382,7 +406,7 @@ printf 'default arch-linux-zen.efi\nconsole-mode auto\ntimeout 0\neditor no\n' >
 arch-chroot /mnt systemctl disable arch-os-boot-tries.service
 rm -f /mnt/etc/systemd/system/arch-os-boot-tries.service /mnt/usr/local/lib/arch-os/boot-tries.sh
 umount -R /mnt
-cryptsetup close e2e-old
+close_luks e2e-old
 EOF
     say "Laid the installation out with its images in EFI/Linux"
 }
@@ -392,12 +416,13 @@ EOF
 nested_subvolume() {
     live bash -s <<EOF
 set -euo pipefail
+$(declare -f close_luks)
 printf '%s' '${PASSWORD}' | cryptsetup open ${DISK}2 e2e-nested
 mount -t btrfs -o subvol=@ /dev/mapper/e2e-nested /mnt
 btrfs subvolume create /mnt/var/lib/machines/e2e
 echo kept >/mnt/var/lib/machines/e2e/kept
 umount /mnt
-cryptsetup close e2e-nested
+close_luks e2e-nested
 EOF
     say "Made a subvolume inside the system"
 }
@@ -627,8 +652,7 @@ fi
 entries_ready main.conf
 snapshots="$(as_root snapper --csvout --no-headers list | wc -l)"
 [ "$snapshots" -gt 1 ] || fail "the installed system holds no snapshot to go back to"
-newest="$(as_root snapper --csvout --no-headers list --columns number | tail -n1)"
-[ -n "$newest" ] || fail "the installed system names no newest snapshot"
+first="$(boot_snapshot)"
 
 # Its entry used up, the system starts from its fallback.
 used_up main
@@ -636,6 +660,8 @@ shutdown_installed
 start disk
 healthy
 entries_ready main-fallback.conf
+[ "$(boot_snapshot)" -gt "$first" ] || fail "a good start kept the snapshot of the start before"
+say "Snapshot: each good start replaces the one of the start before"
 
 # Both used up, the Recovery starts by itself and restores their tries.
 used_up main main-fallback
@@ -646,6 +672,7 @@ cut_power
 start disk
 healthy
 entries_ready main.conf
+newest="$(boot_snapshot)"
 shutdown_installed
 
 start repair

@@ -121,7 +121,7 @@ for entry in "${MNT}"/usr/local/share/applications/*.desktop; do
     grep -qx 'Hidden=true' "$entry" || continue
     name="$(basename "$entry")"
     if [ -x "${MNT}/usr/bin/desktop-file-validate" ]; then
-        arch-chroot "$MNT" desktop-file-validate "/usr/local/share/applications/${name}"
+        [ -z "$(desktop_complaints "/usr/local/share/applications/${name}")" ]
     fi
     [ -f "${MNT}/usr/share/applications/${name}" ] || continue
     found="$(app_listed "$name")"

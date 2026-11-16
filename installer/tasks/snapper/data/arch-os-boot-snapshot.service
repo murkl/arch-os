@@ -1,0 +1,18 @@
+# Written by Arch OS.
+[Unit]
+Description=Arch OS snapshot of the last good boot
+Documentation=https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
+# No default dependencies: multi-user.target would wait for the session
+# boot-complete.target waits for.
+DefaultDependencies=no
+Requires=boot-complete.target dbus.service
+After=local-fs.target boot-complete.target dbus.service
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/arch-os/boot-snapshot.sh
+
+[Install]
+WantedBy=multi-user.target

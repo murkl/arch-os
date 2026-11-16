@@ -1,5 +1,7 @@
 arch-chroot "$MNT" test -d /.snapshots
 arch-chroot "$MNT" systemctl is-enabled snapper-cleanup.timer >/dev/null
+arch-chroot "$MNT" systemctl is-enabled arch-os-boot-snapshot.service >/dev/null
+[ -z "$(unit_complaints arch-os-boot-snapshot.service)" ]
 if arch-chroot "$MNT" systemctl is-enabled -q snapper-timeline.timer; then
     echo "snapper-timeline.timer enabled without a timeline" >&2
     exit 1

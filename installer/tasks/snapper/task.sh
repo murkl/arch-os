@@ -24,4 +24,11 @@ run arch-chroot "$MNT" systemctl disable snapper-timeline.timer
 
 run arch-chroot "$MNT" systemctl enable snapper-cleanup.timer
 
+# One more snapshot per good start, which also holds changes made by hand.
+run mkdir -p "${MNT}/usr/local/lib/arch-os"
+render "$(where)/boot-snapshot.sh" | write_file "${MNT}/usr/local/lib/arch-os/boot-snapshot.sh"
+run chmod 755 "${MNT}/usr/local/lib/arch-os/boot-snapshot.sh"
+render "$(where)/arch-os-boot-snapshot.service" | write_file "${MNT}/etc/systemd/system/arch-os-boot-snapshot.service"
+run arch-chroot "$MNT" systemctl enable arch-os-boot-snapshot.service
+
 chroot_pacman_install snap-pac

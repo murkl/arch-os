@@ -1,5 +1,5 @@
 # systemctl refuses an unknown boot entry only after the dialog was confirmed.
-arch-chroot "$MNT" desktop-file-validate /usr/local/share/applications/arch-os-recovery.desktop
+[ -z "$(desktop_complaints /usr/local/share/applications/arch-os-recovery.desktop)" ]
 [ -x "${MNT}/usr/local/bin/arch-os-recovery" ]
 
 # hicolor is the fallback of every theme.
