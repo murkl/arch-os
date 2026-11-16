@@ -44,6 +44,13 @@ const GRACE: Duration = if cfg!(test) {
 /// Time a killed process may take to exit. One in disk wait exits once the disk answers.
 const GONE: Duration = Duration::from_secs(5);
 const POLL: Duration = Duration::from_millis(50);
+/// Time the output may take to end after its script. A process left behind keeps the pipes open
+/// without an end.
+const DRAIN: Duration = Duration::from_secs(2);
+/// Bytes of an unfinished line shown, a progress bar's end.
+const SHOWN: usize = 4096;
+/// Bytes of an unfinished line kept for the log, above any line a tool prints.
+const LINE: usize = 1 << 20;
 
 impl Session {
     pub(super) fn spawn(
@@ -81,8 +88,9 @@ impl Session {
         // Read to the end: a read end closed early kills the script by SIGPIPE on its next
         // report. Bytes, since a recorded file need not be UTF-8.
         let reports = sink.clone();
+        let failed: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let first = failed.clone();
         let fail = std::thread::spawn(move || {
-            let mut first = None;
             for line in BufReader::new(std::fs::File::from(events))
                 .split(b'\n')
                 .map_while(Result::ok)
@@ -94,19 +102,23 @@ impl Session {
                     reports(Event::Command(text));
                 } else if line == "cmd-ok" {
                     reports(Event::Confirmed);
-                } else if first.is_none() && line.starts_with("fail\t") {
-                    first = Some(line.into_owned());
+                } else if line.starts_with("fail\t") {
+                    first.lock().unwrap().get_or_insert(line.into_owned());
                 }
             }
-            first
         });
         std::thread::spawn(move || {
             let status = child.wait();
-            // All lines arrive before the outcome.
-            for r in readers {
-                let _ = r.join();
+            // All lines arrive before the outcome, within a bound.
+            let deadline = Instant::now() + DRAIN;
+            let ended = || readers.iter().all(|r| r.is_finished()) && fail.is_finished();
+            while !ended() && Instant::now() < deadline {
+                std::thread::sleep(POLL);
             }
-            let fail = fail.join().unwrap_or_default();
+            if !ended() {
+                crate::warn!("{}: a process left behind holds the output", step.name);
+            }
+            let fail = failed.lock().unwrap().take();
             let stderr = stderr_tail.lock().unwrap().join("\n");
             let result = match status {
                 Ok(s) if s.success() => Ok(()),
@@ -220,12 +232,12 @@ fn follow(
                 }
                 sink(Event::Line(line));
             }
-            // An unfinished line is a progress bar redrawing itself. Shown as is, only its end
-            // kept.
-            if buf.len() > 4096 {
-                buf.drain(..buf.len() - 4096);
+            // An unfinished line is a progress bar redrawing itself. Only its end is shown, the
+            // log gets the line whole.
+            if buf.len() > LINE {
+                buf.drain(..buf.len() - LINE);
             }
-            let current = drawn(&buf);
+            let current = drawn(&buf[buf.len().saturating_sub(SHOWN)..]);
             if !current.is_empty() {
                 sink(Event::Drawn(current));
             }

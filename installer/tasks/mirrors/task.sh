@@ -10,7 +10,7 @@ printf 'machine: %s cores, %s memory, %s on %s, virtualization %s\n' \
 # the new system. Never fatal: a slow mirror still installs.
 # https://wiki.archlinux.org/title/Reflector
 rank_mirrors() {
-    local ranked warnings servers unrated country args=(--protocol https --age 12 --latest 10 --sort rate)
+    local ranked warnings servers unrated country args=(--protocol https --age 12 --latest 20 --sort rate)
     country="$(mirror_country)"
     [ -n "$country" ] && args+=(--country "$country")
     ranked="$(mktemp)"

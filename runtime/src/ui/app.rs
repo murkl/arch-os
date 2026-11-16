@@ -32,7 +32,8 @@ impl App {
         let mut store = Store::new(start.module, dir, start.dry_run);
         let first = !store.exists();
         store.load()?;
-        crate::log::init(store.log())?;
+        // Without a log the program still runs, and a failure page names no log.
+        let _ = crate::log::init(store.log());
         crate::info!(
             "{} {}",
             crate::i18n::t(&start.module.title),
@@ -171,6 +172,10 @@ impl App {
             Msg::Paste(text) => {
                 if typing {
                     for c in text.chars().filter(|c| !c.is_control()) {
+                        // The page a character opened did not ask for the rest.
+                        if self.pages.last().map(|(id, _)| *id) != Some(top) {
+                            break;
+                        }
                         self.handle(Msg::Key(Key::Char(c)));
                     }
                 }
@@ -221,12 +226,14 @@ impl App {
             }
         }
         if let Some(by) = self.ctx.halt.take() {
-            let scripts: Vec<crate::script::Session> = self
-                .pages
-                .iter_mut()
-                .filter(|(id, _)| *id != by)
-                .filter_map(|(_, page)| page.stop(&mut self.ctx))
-                .collect();
+            let mut scripts: Vec<crate::script::Session> = Vec::new();
+            for (id, page) in self.pages.iter_mut().filter(|(id, _)| *id != by) {
+                if let Some(script) = page.stop(&mut self.ctx) {
+                    scripts.push(script);
+                    // What its run asked for before the stop is void.
+                    self.waiting.retain(|(w, _)| w != id);
+                }
+            }
             self.ctx.page = by;
             self.ctx.spawn(move || {
                 for script in &scripts {
@@ -2164,6 +2171,126 @@ pub mod tests {
             Box::new(pages::leave::LeavePage::new(&app.ctx, false, true)),
             Box::new(pages::run::RunPage::new(&app.ctx)),
         ]
+    }
+
+    fn report() -> Box<dyn Page> {
+        Box::new(pages::report::ReportPage::new(
+            "report update".into(),
+            "Update".into(),
+            "Up to date".into(),
+            false,
+            pages::report::Close::PopN(1),
+        ))
+    }
+
+    /// Every key that goes on or back closes it. None of them opens the way out.
+    #[test]
+    fn a_report_closes_on_every_key_that_goes_on_or_back() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        for key in [
+            Key::Enter,
+            Key::Right,
+            Key::Char('l'),
+            Key::Esc,
+            Key::Left,
+            Key::Char('h'),
+            Key::Backspace,
+        ] {
+            let (mut app, mut term, _rx) = app(false);
+            answered(&mut app);
+            open(&mut app, report());
+            screen(&mut app, &mut term);
+            press(&mut app, &[key]);
+            assert_eq!(app.depth(), 1, "{key:?} led to {:?}", app.titles());
+        }
+    }
+
+    /// The first character ends the splash, and the page under it never asked for the rest.
+    #[test]
+    fn a_paste_ends_the_splash_and_goes_no_further() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        open(&mut app, Box::new(pages::splash::SplashPage::after(100)));
+        screen(&mut app, &mut term);
+        app.handle(Msg::Paste("fq".into()));
+        let shown = screen(&mut app, &mut term);
+        assert_eq!(app.depth(), 1, "{:?}", app.titles());
+        assert!(!app.done() && !shown.contains("Filter"), "{shown}");
+    }
+
+    #[test]
+    fn ctrl_c_leaves_from_a_text_box() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app(false);
+        answered(&mut app);
+        let host = app.ctx.module.setting("TUX_HOST").unwrap();
+        open(
+            &mut app,
+            Box::new(pages::question::QuestionPage::setting(
+                host,
+                pages::Then::Pop,
+            )),
+        );
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Ctrl('c')]);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("› Leave"), "{shown}");
+    }
+
+    /// Back on an action's failure leaves the pages the action opened, as its row does.
+    #[test]
+    fn back_on_a_failure_acts_as_its_last_row() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, _rx) = app(false);
+        answered(&mut app);
+        open(&mut app, report());
+        let act = crate::ui::detail::Act::new("Back", |_| Flow::PopN(2)).does(Does::Back);
+        open(
+            &mut app,
+            Box::new(pages::failure::FailurePage::new(
+                "failure f".into(),
+                "F".into(),
+                None,
+                crate::script::Failure::default(),
+                vec![act],
+            )),
+        );
+        screen(&mut app, &mut term);
+        press(&mut app, &[Key::Esc]);
+        assert_eq!(app.depth(), 1, "{:?}", app.titles());
+    }
+
+    /// A list that takes an own entry opens on it where the answer is none of its options.
+    #[test]
+    fn an_own_entry_is_offered_again() {
+        let _lang = crate::i18n::LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        crate::i18n::set("en");
+        let (mut app, mut term, rx) = app_with(
+            &[(
+                "type: list\n      title: Disk",
+                "type: open-list\n      title: Disk",
+            )],
+            false,
+        );
+        answered(&mut app);
+        app.ctx.store.set("TUX_DISK", "sdz");
+        let disk = app.ctx.module.setting("TUX_DISK").unwrap();
+        open(
+            &mut app,
+            Box::new(pages::question::QuestionPage::setting(
+                disk,
+                pages::Then::Pop,
+            )),
+        );
+        settle(&mut app, &mut term, &rx);
+        press(&mut app, &[Key::Enter]);
+        let shown = screen(&mut app, &mut term);
+        assert!(shown.contains("sdz") && !shown.contains("sda"), "{shown}");
     }
 
     /// A terminal can shrink to one cell. No page may panic there.

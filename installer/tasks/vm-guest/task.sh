@@ -4,12 +4,13 @@ kvm | qemu)
     # The same guest with or without hardware virtualization. Its units are
     # static and started by udev.
     echo "detected QEMU"
-    chroot_pacman_install qemu-guest-agent
+    packages=(qemu-guest-agent)
     # Clipboard, screen size and the shared folders of GNOME Boxes, all of which
     # need a desktop.
     if [ "$ARCH_OS_DESKTOP" != "none" ]; then
-        chroot_pacman_install spice-vdagent phodav
+        packages+=(spice-vdagent phodav)
     fi
+    chroot_pacman_install "${packages[@]}"
     ;;
 
 vmware)

@@ -9,7 +9,7 @@ use ratatui::layout::Rect;
 use crate::i18n::t;
 use crate::spec::{Action, Shell};
 use crate::ui::draw::{paragraph, put, waiting};
-use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Nav, Page, Tone};
 
 /// Recheck interval: short enough that a plugged-in cable passes before anyone presses r, long
 /// enough that a network check is no load.
@@ -146,7 +146,7 @@ impl Page for GatePage {
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
         match &self.refused {
-            None => Vec::new(),
+            None => vec![("esc", Does::Back)],
             Some(Some(_)) => vec![("⏎", Does::Open), ("r", Does::Reload), ("esc", Does::Back)],
             Some(None) => vec![("r", Does::Reload), ("esc", Does::Back)],
         }
@@ -159,16 +159,16 @@ impl Page for GatePage {
                 _ => Flow::Stay,
             };
         };
-        match key {
-            Key::Enter => match fallback {
+        match key.nav(false) {
+            Some(Nav::Open) => match fallback {
                 Some(fallback) => super::action::open(ctx, fallback),
                 None => Flow::Stay,
             },
-            Key::Char('r') => {
+            Some(Nav::Back | Nav::Quit) => Flow::Ignored,
+            _ if key == Key::Char('r') => {
                 self.check(ctx);
                 Flow::Stay
             }
-            Key::Esc | Key::Backspace | Key::Ctrl('c') | Key::Char('q') => Flow::Ignored,
             _ => Flow::Stay,
         }
     }

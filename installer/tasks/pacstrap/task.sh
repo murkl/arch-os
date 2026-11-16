@@ -38,17 +38,9 @@ fi
 # runs it once.
 command=(pacstrap -K "$MNT" "${packages[@]}")
 record "$(shell_line "${command[@]}")"
-installed=false
-for ((i = 1; i <= RETRIES; i++)); do
-    [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacstrap"
-    if "${command[@]}"; then
-        installed=true
-        confirmed
-        break
-    fi
-    if [ "$i" -lt "$RETRIES" ]; then sleep "$RETRY_WAIT"; fi
-done
-if [ "$installed" != "true" ]; then
+if retried "$RETRIES" pacstrap "${command[@]}"; then
+    confirmed
+else
     echo "installing the base system failed after ${RETRIES} attempts" >&2
     check_online || exit "$EXIT_OFFLINE"
     exit 1

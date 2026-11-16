@@ -1085,8 +1085,9 @@ fn conditions(conds: &[Condition], names: &[String]) -> Result<(), String> {
     }
 }
 
-/// How an action runs, which decides what it may declare.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// How an action runs, which decides what it may declare. One named in several places runs in
+/// each of these ways and keeps to the rules of all.
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum How {
     /// Runs unasked to decide whether another is offered. No page.
     Unasked,
@@ -1168,8 +1169,8 @@ fn module(
         });
     }
 
-    // How each action runs, the strictest place first. An unnamed own action is refused, an
-    // unnamed product action is dropped.
+    // How each action runs. An unnamed own action is refused, an unnamed product action is
+    // dropped.
     let dashboard = dashboard(&f.dashboard).map_err(m)?;
     if let Some(group) = &f.language
         && !settings.iter().any(|s| s.group == *group)
@@ -1180,24 +1181,25 @@ fn module(
         leave: f.on.leave,
         success: f.on.success,
     };
-    let mut how: BTreeMap<String, How> = BTreeMap::new();
+    let mut how: BTreeMap<String, Vec<How>> = BTreeMap::new();
     let mut queue: Vec<String> = Vec::new();
     let place = |where_: &str,
                  key: &str,
                  list: &[String],
                  h: How,
-                 how: &mut BTreeMap<String, How>,
+                 how: &mut BTreeMap<String, Vec<How>>,
                  queue: &mut Vec<String>|
      -> Result<(), String> {
         for name in list {
             if !actions.iter().any(|a| a.id == *name) {
                 return Err(format!("{where_}: {key}: no such action: {name}"));
             }
-            let seen = how.contains_key(name);
-            let was = how.get(name).copied().unwrap_or(How::Unasked);
-            how.insert(name.clone(), if seen { was.max(h) } else { h });
-            if !seen {
+            if !how.contains_key(name) {
                 queue.push(name.clone());
+            }
+            let ways = how.entry(name.clone()).or_default();
+            if !ways.contains(&h) {
+                ways.push(h);
             }
         }
         Ok(())
@@ -1351,7 +1353,8 @@ fn module(
     // What each action may declare, by how it runs.
     for a in &actions {
         let at = at(&a.id);
-        let h = how[&a.id];
+        let ways = &how[&a.id];
+        let unasked = ways.iter().any(|h| *h != How::Opened);
         let pages = !a.inputs.is_empty() || a.report.is_some();
         if a.tty && (pages || a.confirm.is_some()) {
             return Err(format!("{at}: tty takes no inputs, report or confirm"));
@@ -1359,12 +1362,12 @@ fn module(
         if a.tty && !a.errors.is_empty() {
             return Err(format!("{at}: tty takes no errors"));
         }
-        if h != How::Opened && (pages || a.tty || a.confirm.is_some() || !a.errors.is_empty()) {
+        if unasked && (pages || a.tty || a.confirm.is_some() || !a.errors.is_empty()) {
             return Err(format!(
                 "{at}: an action under requires has no page, tty, confirm or errors"
             ));
         }
-        if h == How::Gating && a.error.is_none() {
+        if ways.contains(&How::Gating) && a.error.is_none() {
             return Err(format!(
                 "{at}: error is required for an action under the module's requires"
             ));
@@ -1885,6 +1888,14 @@ pub mod tests {
             (
                 "title: M\nrequires: [root, row]\ndashboard: [start, settings, asks]\n",
                 "error is required",
+            ),
+            (
+                "title: M\nrequires: [root, row]\ndashboard: [start, settings, asks, row]\n",
+                "error is required",
+            ),
+            (
+                "title: M\nrequires: [root, asks]\ndashboard: [start, settings, asks, row]\n",
+                "has no page",
             ),
             (
                 "title: M\nrequires: [root]\ndashboard: [start, settings, row]\non:\n  leave: [asks]\n",

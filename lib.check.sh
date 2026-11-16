@@ -410,10 +410,11 @@ fetch_url() { return "$aur_down"; }
 mkdir "${templates}/bin"
 cat >"${templates}/bin/arch-chroot" <<'EOF'
 #!/bin/sh
+echo "$3" >>"$operations"
 exit "$installs"
 EOF
 chmod +x "${templates}/bin/arch-chroot"
-export installs
+export installs operations="${templates}/operations"
 while read -r installs offline want; do
     expect "chroot_pacman_install with pacman ${installs}, offline ${offline}" \
         "$( (as_action && PATH="${templates}/bin:${PATH}" chroot_pacman_install x) 2>/dev/null | tally)" "$want"
@@ -422,6 +423,11 @@ done <<EOF
 1 0 $((RETRIES - 1)) 1
 1 1 $((RETRIES - 1)) ${EXIT_OFFLINE}
 EOF
+
+# A repeat refreshes the databases, the first attempt installs from them as is.
+: >"$operations"
+(installs=1 offline=0 && as_action && PATH="${templates}/bin:${PATH}" chroot_pacman_install x) >/dev/null 2>&1 || true
+expect "chroot_pacman_install's operation per attempt" "$(sort "$operations" | uniq -c | paste -sd' ' | tr -s ' ')" " 1 -S $((RETRIES - 1)) -Syu"
 
 # An AUR build takes the passwordless sudo rule back however it ends. Offline
 # and an unreachable AUR end the task with the module's status.
@@ -475,6 +481,48 @@ mount() {
 expect "mount_esp where the EFI partition is mounted read-only elsewhere" \
     "$( (as_action && ARCH_OS_RECOVERY_DISK=/dev/vda mount_esp /mnt/boot) 2>&1 | paste -sd' ')" \
     "mount: /mnt/boot: /dev/vda1 already mounted on /tmp/probe. 32"
+
+# A mount an interrupted run left is named and goes before the check.
+mount() { :; }
+findmnt() { echo /run/arch-os-esp; }
+umount() { echo "umount $*"; }
+expect "mount_esp where an interrupted run left the EFI partition mounted" \
+    "$( (as_action && ARCH_OS_RECOVERY_DISK=/dev/vda mount_esp /mnt/boot) 2>&1 | paste -sd' ')" \
+    "/run/arch-os-esp unmounting the EFI partition /dev/vda1 left mounted there umount -A /dev/vda1 0"
+unset -f fsck.fat mount findmnt umount
+
+# ─── Recovery Update ─────────────────────────────────────────────────────────
+
+# An update that fails closes what it opened and keeps the status it failed with.
+releases_json() { echo '[]'; }
+recovery_update() { echo "9.9.9 https://example.org/arch-os-9.9.9-recovery-x86_64.tar 0"; }
+close_target() { echo closed; }
+mountpoint() { return 1; }
+mount_esp() { :; }
+rm() { :; }
+fetch_url() { return 1; }
+check_online() { :; }
+expect "install_recovery_update where the download fails" \
+    "$( (
+        (as_action && ARCH_OS_RECOVERY_ENCRYPTED=false install_recovery_update) 2>/dev/null
+        echo "$?"
+    ) | paste -sd' ')" \
+    "closed fetching arch-os-9.9.9-recovery-x86_64.tar closed 10"
+unset -f releases_json recovery_update close_target mountpoint mount_esp rm fetch_url check_online
+
+# ─── Live Disk ───────────────────────────────────────────────────────────────
+
+# The image's loop device has no disk. Ventoy maps the boot mount from a
+# partition.
+lsblk() {
+    case "$*" in
+    "-nro PATH,MOUNTPOINT") printf '%s\n' "/dev/loop0 /run/archiso/airootfs" "/dev/mapper/ventoy /run/archiso/bootmnt" "/dev/sda1 /boot" ;;
+    *" /dev/loop0") echo "/dev/loop0 loop" ;;
+    *" /dev/mapper/ventoy") printf '%s\n' "/dev/mapper/ventoy dm" "/dev/sdb1 part" "/dev/sdb disk" ;;
+    esac
+}
+expect "live_disk under Ventoy" "$(live_disk)" /dev/sdb
+unset -f lsblk
 
 [ "$status" -eq 0 ] && echo "lib.sh passes every case"
 exit "$status"

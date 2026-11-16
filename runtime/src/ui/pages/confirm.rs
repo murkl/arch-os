@@ -5,9 +5,9 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
 use crate::i18n::t;
-use crate::ui::detail::{Block, Detail, words};
+use crate::ui::detail::{Detail, words};
 use crate::ui::list::{List, Picked, Row};
-use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Nav, Page};
 
 /// What a yes does.
 pub enum Outcome {
@@ -153,28 +153,31 @@ impl Page for YesNoPage {
     }
 
     fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &mut Ctx) {
-        // Answers right under the question, not at the page foot.
+        // Answers right under the question, not at the page foot. On a page too short for both,
+        // the question keeps a row and the blank row goes first.
         let text = self
             .detail
             .height(area.width, ctx)
-            .min(area.height.saturating_sub(3));
+            .min(area.height.saturating_sub(3))
+            .max(area.height.min(1));
+        let gap = u16::from(area.height >= text + 3);
+        let rows = area.height.saturating_sub(text + gap).min(2);
         self.detail
             .draw(Rect::new(area.x, area.y, area.width, text), buf, ctx);
         self.list.draw(
-            Rect::new(area.x, area.y + text + 1, area.width, 2),
+            Rect::new(area.x, area.y + text + gap, area.width, rows),
             buf,
             ctx,
         );
-        let _ = Block::Blank;
-        let _ = Tone::Normal;
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
-        vec![
-            ("↑↓", Does::Choose),
-            ("⏎", Does::Answer),
-            ("esc", Does::Back),
-        ]
+        let mut hints = vec![("↑↓", Does::Choose), ("⏎", Does::Answer)];
+        if self.detail.overflows() {
+            hints.push(("⇞⇟", Does::Scroll));
+        }
+        hints.push(("esc", Does::Back));
+        hints
     }
 
     fn root(&self) -> bool {
@@ -182,10 +185,14 @@ impl Page for YesNoPage {
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
+        // A question longer than its room scrolls, the answers keep the other keys.
+        if self.detail.overflows() && self.detail.pages(key) {
+            return Flow::Stay;
+        }
         match self.list.key(key) {
             Picked::Open(yes) => self.chosen(yes, ctx),
             Picked::Used => Flow::Stay,
-            Picked::Ignored if matches!(key, Key::Esc | Key::Backspace) => self.chosen(false, ctx),
+            Picked::Ignored if key.nav(false) == Some(Nav::Back) => self.chosen(false, ctx),
             Picked::Ignored => Flow::Ignored,
         }
     }

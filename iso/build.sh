@@ -303,7 +303,7 @@ ${SUDO} rm -rf "$readback"
 
 # Every command the scripts call is present, and pacman.conf removed no module
 # a repair may load. The ISO shares kernel and pacman.conf, so this covers it.
-for command in arch-chroot blkid blockdev btrfs cryptsetup curl fsck.fat fuser ip iwctl jq loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
+for command in arch-chroot blkid blockdev bootctl btrfs cmp cryptsetup curl file findmnt fsck.fat fuser ip iwctl jq loadkeys localectl lsblk mount mountpoint setfont sha256sum swapoff tar umount; do
     [ -x "${recovery_root}/usr/bin/${command}" ] || { echo "Error: the Recovery has no ${command}" >&2 && exit 1; }
 done
 # Enabled units, as systemd reads the links: the Recovery, the wired network
@@ -316,10 +316,10 @@ for unit in $RECOVERY_MASKED_UNITS; do
     [ "$(${SUDO} systemctl --root="$recovery_root" is-enabled "$unit")" = masked ] || { echo "Error: the Recovery does not mask ${unit}" >&2 && exit 1; }
 done
 modules="$(find "${recovery_root}/usr/lib/modules" -name '*.ko*')"
-deps="$(while read -r module; do
-    depends="$(modinfo -F depends "$module")" || { echo "Error: modinfo cannot read ${module}" >&2 && exit 1; }
-    printf '%s\t%s\n' "$module" "$depends"
-done <<<"$modules")"
+# One line per module, in order, so a single modinfo answers for all of them.
+depends="$(xargs -d '\n' modinfo -F depends <<<"$modules")" || { echo "Error: modinfo cannot read ${recovery_root}" >&2 && exit 1; }
+[ "$(wc -l <<<"$depends")" -eq "$(wc -l <<<"$modules")" ] || { echo "Error: modinfo answered for another number of modules" >&2 && exit 1; }
+deps="$(paste <(cat <<<"$modules") <(cat <<<"$depends"))"
 grep -q $'\t.' <<<"$deps" || { echo "Error: modinfo found no dependencies in ${recovery_root}" >&2 && exit 1; }
 lost="$(awk -F'\t' '
     NR == FNR { have[$1] = 1; next }

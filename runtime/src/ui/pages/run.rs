@@ -17,7 +17,7 @@ use crate::spec::{self, Task};
 use crate::ui::detail::{Act, Block, Detail, mark, words};
 use crate::ui::draw::{cut, put, width, wrap};
 use crate::ui::list::Lead;
-use crate::ui::{Ctx, Data, Does, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Data, Does, Flow, Key, Nav, Page, Tone};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Mark {
@@ -812,14 +812,13 @@ impl Page for RunPage {
             self.result.hints()
         };
         hints.push(view);
+        hints.extend(self.result.back_hint(self.text));
         hints
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
-        let way_out = matches!(
-            key,
-            Key::Esc | Key::Backspace | Key::Char('q') | Key::Ctrl('c')
-        );
+        let nav = key.nav(false);
+        let way_out = matches!(nav, Some(Nav::Back | Nav::Quit));
         if key == Key::Tab {
             self.text = !self.text;
             return Flow::Stay;
@@ -833,7 +832,7 @@ impl Page for RunPage {
             return if way_out { Flow::Ignored } else { Flow::Stay };
         }
         // Back acts as the last row, never returning to the questions still behind the run.
-        if matches!(key, Key::Esc | Key::Backspace)
+        if nav == Some(Nav::Back)
             && let Some(way) = self.way()
         {
             return onward(way, ctx);

@@ -98,7 +98,7 @@ BUILD_OUTPUT := $(DIST_DIR) $(ISO_DIR)/archiso $(ISO_DIR)/download
 # Empty as root, as in CI.
 SUDO := $(shell [ "$$(id -u)" -eq 0 ] || echo sudo)
 
-.PHONY: all build run image iso smoke e2e screenshots banner check fmt fmt-check lint test \
+.PHONY: all build run image iso smoke smoke-iso smoke-recovery e2e screenshots banner check fmt fmt-check lint test \
 	secrets-check library-check data-check zsh-check glyphs-check github clean
 
 all: build
@@ -119,9 +119,15 @@ image:
 # .WAIT, since the images embed the program.
 iso: build .WAIT image
 
-# Boots both images until the interface shows. Frames land in dist/.
+# Boots both images at once until the interface shows, each with its output in
+# one piece. Frames land in dist/.
 smoke:
+	@$(MAKE) --no-print-directory -j2 --output-sync=target smoke-iso smoke-recovery
+
+smoke-iso:
 	$(ISO_SMOKE) $(ISO)
+
+smoke-recovery:
 	$(ISO_SMOKE) $(RECOVERY)
 
 # Installs the newest ISO through its interface: iso/README.md. Logs land in

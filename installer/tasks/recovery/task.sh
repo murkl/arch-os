@@ -20,5 +20,11 @@ render "$(where)/recovery.conf" LANGUAGE="$MODULE_LANGUAGE" KEYMAP="$ARCH_OS_VCO
 # Hides the Recovery partition from the file manager. By PARTUUID, which a
 # Recovery update keeps.
 run mkdir -p "${MNT}/etc/udev/rules.d"
-render "$(where)/90-arch-os-recovery.rules" PARTUUID="$(blkid -p -s PART_ENTRY_UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")" |
+partuuid="$(blkid -p -s PART_ENTRY_UUID -o value "$(recovery_partition "$ARCH_OS_DISK")")"
+# An empty value matches every device without one, whole disks included.
+if [ -z "$partuuid" ]; then
+    echo "$(recovery_partition "$ARCH_OS_DISK") names no PARTUUID" >&2
+    exit 1
+fi
+render "$(where)/90-arch-os-recovery.rules" PARTUUID="$partuuid" |
     write_file "${MNT}/etc/udev/rules.d/90-arch-os-recovery.rules"

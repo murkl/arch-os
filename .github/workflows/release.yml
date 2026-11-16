@@ -87,6 +87,8 @@ jobs:
             dist/smoke/*/*.png
             dist/e2e/*.png
             dist/e2e/*.log
+            dist/e2e/*.out
+            dist/e2e/trace
           if-no-files-found: ignore
           retention-days: 7
 

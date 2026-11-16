@@ -35,8 +35,6 @@ pub struct Glyphs {
     pub path: &'static str,
     pub ellipsis: &'static str,
     pub separator: &'static str,
-    pub bar: &'static str,
-    pub track: &'static str,
     /// A scrollbar's track, then its thumb.
     pub scroll: [&'static str; 2],
     /// A box's corners: top left, top right, bottom left, bottom right. Its top and bottom are
@@ -68,8 +66,6 @@ impl Glyphs {
             self.path,
             self.ellipsis,
             self.separator,
-            self.bar,
-            self.track,
             self.scroll[0],
             self.scroll[1],
             self.side,
@@ -96,8 +92,6 @@ pub static UNICODE: Glyphs = Glyphs {
     path: "›",
     ellipsis: "…",
     separator: "·",
-    bar: "━",
-    track: "─",
     scroll: ["│", "┃"],
     corners: ["╭", "╮", "╰", "╯"],
     side: "│",
@@ -122,8 +116,6 @@ pub static CONSOLE: Glyphs = Glyphs {
     path: "›",
     ellipsis: "…",
     separator: "·",
-    bar: "█",
-    track: "─",
     scroll: ["│", "█"],
     corners: ["┌", "┐", "└", "┘"],
     side: "│",
@@ -276,7 +268,7 @@ impl Style {
 
     pub fn spinner(&self) -> &'static str {
         let frames = self.glyphs.spinner;
-        let turns = super::beats(std::time::Instant::now(), super::BEAT) / 3;
+        let turns = super::beats(std::time::Instant::now(), super::BEAT);
         frames[turns as usize % frames.len()]
     }
 }

@@ -67,7 +67,7 @@ fail() {
         printf 'screendump %s -f png\n' "${WORK}/console.png" >&3 && sleep 2 &&
             echo "console screenshot: ${WORK}/console.png" >&2
     fi
-    for log in "$WORK"/*.log; do
+    for log in "$WORK"/*.log "$WORK"/*.out; do
         [ -f "$log" ] || continue
         echo "--- ${log##*/}, last lines:" >&2
         tail -n 40 "$log" | sed 's/^/  | /' >&2
@@ -239,6 +239,16 @@ shows() {
         live cat /opt/arch-os/recovery.log >"${WORK}/recovery.log" || true
         fail "the interface never traced ${1} within ${2}s"
     }
+}
+
+# Waits for the update's answer. A lookup that failed, offline or with GitHub
+# unreachable, is named rather than left to the timeout.
+update_answers() {
+    shows "page report update|page password ARCH_OS_RECOVERY_UPDATE_PASSWORD|page failure update" 120
+    if traced 1 "page failure update" in_tmux; then
+        pane >"${WORK}/pane.log" || true
+        fail "the update could not ask GitHub for the releases"
+    fi
 }
 
 # Moves the cursor in tmux down until the trace says it is on row $1.
@@ -718,7 +728,7 @@ live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery --trace ${LIVE_T
 shows "page dashboard" 60
 focus update
 keys Enter
-shows "page report update|page password ARCH_OS_RECOVERY_UPDATE_PASSWORD" 120
+update_answers
 traced 1 "page report update" in_tmux || fail "the ISO offered to replace the disk's Recovery, though none is newer"
 live tmux kill-session -t e2e
 live ": >${LIVE_TRACE}"
@@ -731,7 +741,7 @@ say "Update: write the Recovery again from the ISO"
 shows "page dashboard" 60
 focus update
 keys Enter
-shows "page password ARCH_OS_RECOVERY_UPDATE_PASSWORD|page report update" 120
+update_answers
 if traced 1 "page report update" in_tmux; then
     # No Recovery published for this series yet, as for a new major version. The
     # live image asks GitHub itself, so a broken lookup cannot pass as that.

@@ -140,9 +140,9 @@ impl Does {
     }
 }
 
-/// Animation step: a running bar moves one cell per beat, the spinner every third. Waking on the
-/// beat keeps frames evenly spaced.
-pub const BEAT: Duration = Duration::from_millis(40);
+/// Animation step: the spinner turns once per beat. Waking on the beat keeps frames evenly
+/// spaced, and no frame repeats the one before.
+pub const BEAT: Duration = Duration::from_millis(120);
 /// Frame of smooth motion, and the minimum time between two draws.
 pub const FRAME: Duration = Duration::from_millis(16);
 /// Beat of a page without animation.
@@ -370,7 +370,8 @@ pub struct Ctx {
     pub behind: bool,
     /// Rereads the status, since an action may have changed it.
     pub recheck: std::cell::Cell<bool>,
-    pub handover: Option<Handover>,
+    /// With the page that hands over, which takes the result.
+    pub handover: Option<(PageId, Handover)>,
     /// Text box cursor position this frame, for the terminal cursor.
     pub cursor: std::cell::Cell<Option<(u16, u16)>>,
     /// Background jobs under way, for the spinner.
@@ -406,7 +407,7 @@ impl Ctx {
         self.page
     }
 
-    pub fn take_handover(&mut self) -> Option<Handover> {
+    pub fn take_handover(&mut self) -> Option<(PageId, Handover)> {
         self.handover.take()
     }
 
