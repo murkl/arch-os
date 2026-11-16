@@ -150,7 +150,11 @@ jobs:
         env:
           TIMEOUT: 600 # a slow boot is not a failed boot
 
+      # The update asks GitHub for the releases, as the repository rather than
+      # as one of the many behind the runner's address.
       - run: make e2e
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       # GNOME, drivers, browsers and the AUR, weekly and by hand.
       - run: make e2e START=desktop
