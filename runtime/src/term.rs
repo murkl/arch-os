@@ -101,7 +101,7 @@ pub fn run(start: Start) -> std::io::Result<()> {
             // While a script has the terminal, the interface stands down, the key thread first.
             // A terminal read from the then background process group stops this process or
             // spins on the error.
-            if let Some(job) = app.ctx.take_handover() {
+            if let Some((page, job)) = app.ctx.take_handover() {
                 gate.pause();
                 mouse(false);
                 // The last frame hid the cursor, and restore leaves it hidden.
@@ -111,7 +111,7 @@ pub fn run(start: Start) -> std::io::Result<()> {
                 terminal = ratatui::init();
                 mouse(true);
                 gate.resume();
-                app.handle(Msg::Data(app.ctx.page_id(), result.into()));
+                app.handle(Msg::Data(page, result.into()));
             }
             if app.done() {
                 return Ok(());

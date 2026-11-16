@@ -7,13 +7,20 @@ data="$(where)"
 # One command line for the UKI and the initramfs entries:
 # docs/REFERENCE.md#boot-chain
 kernel_args() {
-    local args=(rw) system_part
+    local args=(rw) system_part id
     system_part="$(system_partition "$ARCH_OS_DISK")"
 
+    # Read from the disk, not blkid's cache. Without it no system starts.
     if [ "$ARCH_OS_ENCRYPTION_ENABLED" = "true" ]; then
-        args+=(root=/dev/mapper/cryptroot "rd.luks.name=$(blkid -s UUID -o value "$system_part")=cryptroot")
+        id="$(blkid -p -s UUID -o value "$system_part")"
+        args+=(root=/dev/mapper/cryptroot "rd.luks.name=${id}=cryptroot")
     else
-        args+=("root=PARTUUID=$(lsblk -dno PARTUUID "$system_part")")
+        id="$(blkid -p -s PART_ENTRY_UUID -o value "$system_part")"
+        args+=("root=PARTUUID=${id}")
+    fi
+    if [ -z "$id" ]; then
+        echo "${system_part} names no UUID" >&2
+        return 1
     fi
 
     args+=(rootflags=subvol=@ rootfstype=btrfs)
@@ -53,7 +60,8 @@ render "${data}/10-arch-os.conf" HOOKS="$hooks" | write_file "${MNT}/etc/mkinitc
 # Beside initramfs entries it is what the Recovery rebuilds them from once they
 # are lost.
 run mkdir -p "${MNT}/etc/kernel"
-kernel_args | write_file "${MNT}/etc/kernel/cmdline"
+cmdline="$(kernel_args)"
+printf '%s' "$cmdline" | write_file "${MNT}/etc/kernel/cmdline"
 
 kind="$(boot_kind)"
 if [ "$kind" = uki ]; then

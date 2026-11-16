@@ -83,7 +83,8 @@ impl ActionPage {
             self.outcome = Some(Ok(()));
         } else if self.action.tty {
             // The UI yields the terminal while this step runs.
-            ctx.handover = Some(Box::new(move || script::handover(&step, &env)));
+            let job = Box::new(move || script::handover(&step, &env));
+            ctx.handover = Some((ctx.page_id(), job));
         } else {
             match script::start(step, &env, ctx.run_sink()) {
                 Ok(session) => self.session = Some(session),

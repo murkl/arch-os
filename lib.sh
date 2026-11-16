@@ -21,6 +21,10 @@ fetch_url() {
         --speed-limit 1024 --speed-time 60 "$@"
 }
 
+# Output written for people, without color and carriage return, before it is
+# taken apart.
+plain() { sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//'; }
+
 # data/ beside the calling task.sh or test.sh.
 where() { printf '%s/data' "$(dirname "${BASH_SOURCE[1]}")"; }
 
@@ -178,7 +182,7 @@ wifi_station() {
     fi
     for _ in $(seq 10); do
         station="$(iwctl device list |
-            sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
+            plain |
             awk '!found && $NF == "station" { print $1; found = 1 }')"
         [ -n "$station" ] && break
         sleep 0.5 # a fresh iwd lists the card only after a moment
@@ -222,10 +226,14 @@ on_arch_live_image() {
     on_live_image && grep -qs '^ID=arch$' /etc/os-release
 }
 
-# The disk the live system runs from, also via Ventoy. No module writes to it.
+# The disk the live system runs from, also via Ventoy, which maps the image from
+# a partition. No module writes to it.
 live_disk() {
-    lsblk -no PKNAME,MOUNTPOINT |
-        awk '!found && $1 != "" && $2 ~ /^\/run\/archiso/ { print "/dev/" $1; found = 1 }'
+    local device
+    lsblk -nro PATH,MOUNTPOINT | awk '$2 ~ /^\/run\/archiso/ { print $1 }' |
+        while read -r device; do
+            lsblk -nrso PATH,TYPE "$device"
+        done | awk '!found && $2 == "disk" { print $1; found = 1 }'
 }
 
 # ////////////////////////////////////////////////////////////////////////////
@@ -660,17 +668,37 @@ export RECOVERY_MIB=1024
 export RETRIES=5
 export RETRY_WAIT=10
 
-chroot_pacman_install() {
-    local i command=(arch-chroot "$MNT" pacman -S --noconfirm --needed "$@")
-    record "$(shell_line "${command[@]}")"
-    for ((i = 1; i <= RETRIES; i++)); do
-        [ "$i" -gt 1 ] && echo "retry ${i}/${RETRIES}: pacman -S $*"
-        if "${command[@]}"; then
-            confirmed
-            return 0
-        fi
-        if [ "$i" -lt "$RETRIES" ]; then sleep "$RETRY_WAIT"; fi
+# Runs the command up to $1 times, named $2 in the output, and returns its last
+# status. A timeout's 124 ends it, since a hung command hangs again. The callee
+# reads the attempt's number from `attempt`.
+retried() {
+    local tries="$1" label="$2" attempt status=0
+    shift 2
+    for ((attempt = 1; attempt <= tries; attempt++)); do
+        [ "$attempt" -gt 1 ] && echo "retry ${attempt}/${tries}: ${label}"
+        status=0
+        "$@" || status=$?
+        if [ "$status" -eq 0 ] || [ "$status" -eq 124 ]; then break; fi
+        if [ "$attempt" -lt "$tries" ]; then sleep "$RETRY_WAIT"; fi
     done
+    return "$status"
+}
+
+# A repeat refreshes the databases first: a package the mirrors replaced since
+# the last sync fails the same way every time. With -u, since Arch supports no
+# partial upgrade.
+pacman_attempt() {
+    local operation=-S
+    [ "$attempt" -gt 1 ] && operation=-Syu
+    arch-chroot "$MNT" pacman "$operation" --noconfirm --needed "$@"
+}
+
+chroot_pacman_install() {
+    record "$(shell_line arch-chroot "$MNT" pacman -S --noconfirm --needed "$@")"
+    if retried "$RETRIES" "pacman -S $*" pacman_attempt "$@"; then
+        confirmed
+        return 0
+    fi
     echo "pacman failed after ${RETRIES} attempts: $*" >&2
     check_online || exit "$EXIT_OFFLINE"
     return 1
@@ -714,9 +742,9 @@ AUR_TIMEOUT=2700
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"
-    local dir jobs cores build command status=1 i
+    local dir jobs cores build command status=0
 
-    chroot_pacman_install git base-devel
+    chroot_pacman_install git base-devel || return
 
     jobs=$(($(awk '/^MemTotal:/ { print $2 }' /proc/meminfo) / 1048576))
     cores="$(nproc)"
@@ -741,22 +769,15 @@ chroot_aur_install() {
     # takes the time when it runs too.
     run mkdir -p "${MNT}/etc/sudoers.d"
     run_sh "echo \"%wheel ALL=(ALL:ALL) NOTAFTER=\$(date -u -d '+$((AUR_RETRIES * (AUR_TIMEOUT + RETRY_WAIT))) seconds' +%Y%m%d%H%M%SZ) NOPASSWD: /usr/bin/pacman\" >$(shell_line "${MNT}/etc/sudoers.d/99-aur-build")"
-    sudoers_valid 99-aur-build
+    sudoers_valid 99-aur-build || return
 
     echo "building ${repo} from the AUR with ${jobs} job(s)"
     mapfile -d '' -t command < <(user_command timeout "$AUR_TIMEOUT" bash -c "$build")
     record "$(shell_line "${command[@]}")"
-    for ((i = 1; i <= AUR_RETRIES; i++)); do
-        [ "$i" -gt 1 ] && echo "retry ${i}/${AUR_RETRIES}: building ${repo} from the AUR"
-        status=0
-        "${command[@]}" || status=$?
-        [ "$status" -eq 0 ] && break
-        if [ "$status" -eq 124 ]; then
-            echo "building ${repo} from the AUR stopped after $((AUR_TIMEOUT / 60)) minutes" >&2
-            break
-        fi
-        if [ "$i" -lt "$AUR_RETRIES" ]; then sleep "$RETRY_WAIT"; fi
-    done
+    retried "$AUR_RETRIES" "building ${repo} from the AUR" "${command[@]}" || status=$?
+    if [ "$status" -eq 124 ]; then
+        echo "building ${repo} from the AUR stopped after $((AUR_TIMEOUT / 60)) minutes" >&2
+    fi
     [ "$status" -ne 0 ] || confirmed
 
     # Revoked before anything can fail, or passwordless sudo stays.
@@ -894,11 +915,17 @@ mount_target() {
 
 # The EFI partition, checked first as the system checks it at boot: a start
 # broken during a write leaves FAT inconsistent, and a repair writes there.
-# fsck.fat exits 1 for errors it fixed. -w, since mount falls back to read-only
-# where the partition is mounted so elsewhere.
+# fsck.fat exits 1 for errors it fixed. A mount an interrupted run left goes
+# first and is named, since fsck.fat looks for none and would write past the
+# kernel. -w, since mount falls back to read-only where the partition is mounted
+# so elsewhere.
 mount_esp() {
     local esp
     esp="$(boot_partition "$ARCH_OS_RECOVERY_DISK")"
+    if findmnt -no TARGET -S "$esp" >&2; then
+        echo "unmounting the EFI partition ${esp} left mounted there" >&2
+        umount -A "$esp"
+    fi
     fsck.fat -a "$esp" || allow 1
     mount --mkdir -w -t vfat "$esp" "$1"
 }
@@ -1045,12 +1072,12 @@ options_wifi_networks() {
     iwctl station "$device" scan || true
     for _ in $(seq 20); do
         sleep 0.5
-        state="$(iwctl station "$device" show | sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//')"
+        state="$(iwctl station "$device" show | plain)"
         grep -qE '^[[:space:]]*Scanning[[:space:]]+no([[:space:]]|$)' <<<"$state" && break
     done
 
     iwctl station "$device" get-networks |
-        sed -e 's/\x1b\[[0-9;]*m//g' -e 's/\r//' |
+        plain |
         awk '
             /^[[:space:]]*-+[[:space:]]*$/ { rules++; next }
             rules < 2 { next }
@@ -1259,6 +1286,16 @@ recovery_up_to_date() {
     [ -z "$found" ]
 }
 
+# Ends an update however it went, with tar $1 and EFI mount point $2: nothing
+# stays in memory, mounted or open for the next attempt or repair.
+end_recovery_update() {
+    rm -f "$1" "${1}.part" "${MNT}${RECOVERY_EFI}.new" "${2}${RECOVERY_EFI#/boot}.new"
+    if mountpoint -q "$2"; then
+        umount "$2"
+    fi
+    close_target
+}
+
 check_update_password() {
     dry_run && return 0
     unlocks "$ARCH_OS_RECOVERY_UPDATE_PASSWORD"
@@ -1272,7 +1309,7 @@ install_recovery_update() {
     local tar=/tmp/arch-os-recovery-update.tar
     # EFI partition mount point while the system stays closed.
     local esp_mnt=/run/arch-os-esp
-    local json found version url digest stem part size room esp want have
+    local json found version url digest stem part size room esp efi want have
 
     if ! json="$(releases_json)"; then
         check_online || exit "$EXIT_OFFLINE"
@@ -1287,11 +1324,10 @@ install_recovery_update() {
 
     # Leftovers of an earlier attempt go first. Arch OS signs its boot chain only
     # behind encryption, so an encrypted system is mounted for its keys.
-    close_target
-    if mountpoint -q "$esp_mnt"; then
-        umount "$esp_mnt"
-    fi
-    rm -f "$tar" "${tar}.part"
+    end_recovery_update "$tar" "$esp_mnt"
+    # Not caught by the ERR trap, so the status that ended the update stays.
+    # shellcheck disable=SC2064 # the paths as they are now, the locals are gone at exit
+    trap "end_recovery_update $(shell_line "$tar" "$esp_mnt") || true" EXIT
     if [ "$ARCH_OS_RECOVERY_ENCRYPTED" = "true" ]; then
         printf '%s' "$ARCH_OS_RECOVERY_UPDATE_PASSWORD" | cryptsetup open "$(target_partition)" "$CRYPT"
         mount_target
@@ -1324,12 +1360,8 @@ install_recovery_update() {
         exit 12
     fi
 
-    # A leftover copy takes room the kernel images need. Global, since the EXIT
-    # trap reads it after return.
     efi="${esp}${RECOVERY_EFI#/boot}"
     mkdir -p "$(dirname "$efi")"
-    rm -f "${efi}.new"
-    trap 'rm -f "${efi}.new"' EXIT
     tar -xOf "$tar" "${stem}/recovery.efi" >"${efi}.new"
 
     # Signed where the system has sbctl, like its other boot files.
@@ -1360,10 +1392,6 @@ install_recovery_update() {
     sync "${efi}.new"
     mv -f "${efi}.new" "$efi"
     sync
-    if [ "$esp" = "$esp_mnt" ]; then
-        umount "$esp_mnt"
-    fi
-    close_target
-    rm -f "$tar"
+    end_recovery_update "$tar" "$esp_mnt"
     echo "Recovery ${version} installed"
 }

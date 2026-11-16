@@ -137,6 +137,8 @@ pub struct QuestionPage {
     list: Option<List<Choice>>,
     input: Option<Input>,
     problem: Option<String>,
+    /// The answer where it is none of the list's options, for the custom entry's box.
+    own: String,
     started: bool,
 }
 
@@ -153,6 +155,7 @@ impl QuestionPage {
             list: None,
             input: None,
             problem: None,
+            own: String::new(),
             started: false,
         }
     }
@@ -202,7 +205,15 @@ impl QuestionPage {
             rows.push(Row::new(Choice::Own, format!("+ {}", t("Custom entry"))));
         }
         let mut list = List::filterable(rows);
-        list.focus(&Choice::Value(current));
+        if self.which.kind() == Kind::OpenList
+            && !current.is_empty()
+            && !answers.options.iter().any(|(v, _)| *v == current)
+        {
+            list.focus(&Choice::Own);
+            self.own = current;
+        } else {
+            list.focus(&Choice::Value(current));
+        }
         if self.which.filter() == Filter::Open {
             list.open_filter();
         }
@@ -285,7 +296,9 @@ impl Page for QuestionPage {
         let mut y = area.y;
         let description = t(self.which.description());
         if !description.is_empty() {
-            y = paragraph(buf, area, y, &description, s.tone(Tone::Muted)) + 1;
+            // On a page too short for both, the box or list keeps the last row.
+            let text = Rect::new(area.x, area.y, area.width, area.height.saturating_sub(2));
+            y = paragraph(buf, text, y, &description, s.tone(Tone::Muted)) + 1;
         }
         let problem_rows = self
             .problem
@@ -297,6 +310,9 @@ impl Page for QuestionPage {
             area.width,
             area.bottom().saturating_sub(y + problem_rows),
         );
+        if room.height == 0 {
+            return;
+        }
         if let Some(input) = &self.input {
             input.draw(buf, room.x, room.y, room.width, ctx);
         } else if let Some(list) = &mut self.list {
@@ -359,9 +375,10 @@ impl Page for QuestionPage {
                 }
                 Key::Esc => return Flow::Ignored,
                 k => {
-                    if input.key(k) {
-                        self.problem = None;
+                    if !input.key(k) {
+                        return Flow::Ignored;
                     }
+                    self.problem = None;
                     return Flow::Stay;
                 }
             }
@@ -379,7 +396,9 @@ impl Page for QuestionPage {
         match list.key(key) {
             Picked::Open(Choice::Own) => {
                 self.problem = None;
-                self.input = Some(Input::new(&t(self.which.title())));
+                let mut input = Input::new(&t(self.which.title()));
+                input.text = self.own.clone();
+                self.input = Some(input);
                 Flow::Stay
             }
             Picked::Open(Choice::Value(value)) => self.commit(value, ctx),

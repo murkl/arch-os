@@ -156,7 +156,12 @@ impl Page for LeavePage {
             Some(Way::Back) => Does::Back,
             _ => Does::Run,
         };
-        vec![("↑↓", Does::Choose), ("⏎", enter), ("esc", Does::Back)]
+        let mut hints = vec![("↑↓", Does::Choose), ("⏎", enter)];
+        if self.failed.as_ref().is_some_and(|f| f.overflows()) {
+            hints.push(("⇞⇟", Does::Scroll));
+        }
+        hints.push(("esc", Does::Back));
+        hints
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
@@ -164,11 +169,19 @@ impl Page for LeavePage {
         if self.doing.is_some() {
             return Flow::Stay;
         }
+        // A failure longer than its room scrolls, the rows keep the other keys.
+        if let Some(failed) = self.failed.as_mut().filter(|f| f.overflows())
+            && failed.pages(key)
+        {
+            return Flow::Stay;
+        }
         match self.list.key(key) {
             Picked::Open(Way::Back) => Flow::Pop,
             Picked::Open(way) => self.decide(way, ctx),
             Picked::Used => Flow::Stay,
-            Picked::Ignored if matches!(key, Key::Esc | Key::Backspace | Key::Char('q')) => {
+            Picked::Ignored
+                if key == Key::Char('q') || key.nav(false) == Some(crate::ui::Nav::Back) =>
+            {
                 Flow::Pop
             }
             Picked::Ignored => Flow::Ignored,

@@ -146,6 +146,9 @@ impl Page for PasswordPage {
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        if self.checking {
+            return Vec::new();
+        }
         let esc = if self.first.is_some() {
             Does::Return
         } else {

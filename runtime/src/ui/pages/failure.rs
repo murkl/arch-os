@@ -7,7 +7,7 @@ use ratatui::layout::Rect;
 use crate::script::Failure;
 use crate::ui::detail::{Act, Block, Detail, failure};
 use crate::ui::list::Lead;
-use crate::ui::{Ctx, Does, Flow, Key, Page, Tone};
+use crate::ui::{Ctx, Does, Flow, Key, Nav, Page, Tone};
 
 pub struct FailurePage {
     id: String,
@@ -63,10 +63,18 @@ impl Page for FailurePage {
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
-        self.detail.hints()
+        let mut hints = self.detail.hints();
+        hints.extend(self.detail.back_hint(false));
+        hints
     }
 
+    /// Back acts as the last row, which leaves the whole chain an action opened.
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
+        if key.nav(false) == Some(Nav::Back)
+            && let Some(flow) = self.detail.back(ctx)
+        {
+            return flow;
+        }
         self.detail.key(key, ctx)
     }
 }

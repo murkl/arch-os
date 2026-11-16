@@ -13,6 +13,17 @@ iwd_setting() {
     ' "$1"
 }
 
+# The passphrase $1 as the psk of the keyfile on stdin, escaped as GLib writes a
+# value. Not through nmcli, which takes it on the command line only.
+with_psk() {
+    local value="${1//\\/\\\\}" spaces=""
+    while [[ $value == " "* ]]; do
+        spaces+='\s'
+        value="${value# }"
+    done
+    PSK="${spaces}${value}" awk '{ print } $0 == "[wifi-security]" && ENVIRON["PSK"] != "" { print "psk=" ENVIRON["PSK"] }'
+}
+
 # Every Wi-Fi network the live system joined, so the first boot is online. iwd
 # names a profile after the SSID, or "=" and its hex. Not in the script, which
 # holds no passphrase. https://man.archlinux.org/man/iwd.network.5
@@ -30,6 +41,7 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
         ssid="$(printf '%b' "$escaped")"
     fi
     args=(type wifi con-name "$ssid" ssid "$ssid")
+    secret=""
     if [ "$(iwd_setting "$profile" Settings Hidden)" = "true" ]; then
         args+=(wifi.hidden yes)
     fi
@@ -38,11 +50,11 @@ for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     if [[ $profile == *.psk ]]; then
         secret="$(iwd_setting "$profile" Security Passphrase)"
         [ -n "$secret" ] || secret="$(iwd_setting "$profile" Security PreSharedKey)"
-        args+=(wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$secret")
+        args+=(wifi-sec.key-mgmt wpa-psk)
     fi
     keyfile="${MNT}/etc/NetworkManager/system-connections/${name}.nmconnection"
     # A profile nmcli refuses costs that network, not the installation.
-    if (umask 077 && arch-chroot "$MNT" nmcli --offline connection add "${args[@]}" >"$keyfile"); then
+    if (umask 077 && arch-chroot "$MNT" nmcli --offline connection add "${args[@]}" | with_psk "$secret" >"$keyfile"); then
         echo "carried over Wi-Fi ${ssid}"
     else
         rm -f "$keyfile"

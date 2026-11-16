@@ -440,7 +440,7 @@ In the start directory:
 | File | Description |
 | --- | --- |
 | `<module>.conf` | Every answer as `KEY='value'`, under its group with its title as comment, interface language first. Editable by hand. No password, no derived answer, no task or action answer |
-| `<module>.log` | Run progress and all script output, timestamped in the machine's time zone. The previous log stays as `<module>.log.old` |
+| `<module>.log` | Run progress and all script output, timestamped in the machine's time zone. The log of the previous run stays as `<module>.log.old` |
 | `<module>.sh` | The run as a script, in a module with `script`. **[➜ Script](#script)** |
 
 ## Keys

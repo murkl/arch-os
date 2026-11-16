@@ -132,6 +132,37 @@ impl Detail {
         Flow::Stay
     }
 
+    /// The body overflowed in the last draw. A page that embeds it hands it the paging keys.
+    pub fn overflows(&self) -> bool {
+        self.overflow
+    }
+
+    /// Scrolls the body with the paging keys and the wheel, whatever else the page does.
+    pub fn pages(&mut self, key: Key) -> bool {
+        let by = self.page.max(1);
+        match key {
+            Key::PageUp => self.scroll = self.scroll.saturating_sub(by),
+            Key::PageDown => self.scroll += by,
+            Key::WheelUp => self.scroll = self.scroll.saturating_sub(1),
+            Key::WheelDown => self.scroll += 1,
+            _ => return false,
+        }
+        true
+    }
+
+    /// Back acts as the last row.
+    pub fn back(&mut self, ctx: &mut Ctx) -> Option<Flow> {
+        self.acts.last_mut().map(|act| (act.go)(ctx))
+    }
+
+    /// The footer's esc as the last row's deed. Left out while the cursor is on that row and
+    /// `⏎` names the deed already.
+    pub fn back_hint(&self, hidden: bool) -> Option<(&'static str, Does)> {
+        let last = self.acts.len().checked_sub(1)?;
+        let at = self.list.selected().and_then(|r| r.id).unwrap_or(0);
+        (hidden || at != last).then(|| ("esc", self.acts[last].does))
+    }
+
     /// Body lines at `width`.
     pub fn height(&self, width: u16, ctx: &Ctx) -> u16 {
         render(&self.body, width as usize, ctx).len() as u16

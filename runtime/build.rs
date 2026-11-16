@@ -107,6 +107,9 @@ fn last_release() -> Option<String> {
             "--abbrev=0",
             "--match",
             "[0-9]*.[0-9]*.[0-9]*",
+            // A pre-release is no release to count on from.
+            "--exclude",
+            "*-*",
         ])
         .output()
         .ok()?;

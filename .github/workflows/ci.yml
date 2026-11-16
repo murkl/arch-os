@@ -24,10 +24,9 @@ concurrency:
 
 jobs:
   # `make check` on Arch, as locally. Monday's run catches an upstream break and
-  # fills the cache pull requests start from.
+  # fills the cache pull requests start from, as a manual run on main does.
   check:
     name: Check
-    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     # The date names the image, the digest pins it. Same as the Image job.
@@ -71,19 +70,22 @@ jobs:
       - run: make check
 
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: github.event_name == 'schedule' && steps.cache.outputs.cache-hit != 'true'
+        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && steps.cache.outputs.cache-hit != 'true'
         with:
           path: |
             ~/.cargo/registry
             runtime/target
           key: ${{ steps.cache.outputs.cache-primary-key }}
 
-      # docs/, Markdown and LICENSE never reach an image.
+      # Docs, tests, lint configuration and repository settings reach no image.
       - id: scope
         run: |
           image=true
           status=0
-          git diff --quiet HEAD^1 HEAD -- ':!docs/' ':!*.md' ':!LICENSE' || status=$?
+          outside=(':!docs/' ':!*.md' ':!LICENSE' ':!lib.check.sh' ':!*/check.sh' ':!*/check.zsh')
+          outside+=(':!.github/settings/' ':!.github/dependabot.yml' ':!.editorconfig' ':!.gitignore')
+          outside+=(':!.gitleaks.toml' ':!.shellcheckrc' ':!.yamllint.yaml')
+          git diff --quiet HEAD^1 HEAD -- "${outside[@]}" || status=$?
           case "$status" in
           0) image=false ;;
           1) ;;
@@ -137,7 +139,7 @@ jobs:
       - run: make build image
 
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: github.event_name == 'schedule' && steps.cache.outputs.cache-hit != 'true'
+        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && steps.cache.outputs.cache-hit != 'true'
         with:
           path: |
             ~/.cargo/registry
@@ -163,5 +165,7 @@ jobs:
             dist/smoke/*/*.png
             dist/e2e/*.png
             dist/e2e/*.log
+            dist/e2e/*.out
+            dist/e2e/trace
           if-no-files-found: ignore
           retention-days: 7

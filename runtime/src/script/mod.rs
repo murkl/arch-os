@@ -487,6 +487,23 @@ pub mod tests {
         panic!("the script did not end");
     }
 
+    /// A line longer than a pipe's buffer arrives in pieces.
+    #[test]
+    fn a_long_line_reaches_the_log_whole() {
+        let (r, lines) = drive("printf 'start%20000s\\n' end\n", &[]);
+        r.unwrap();
+        let line = lines.last().unwrap();
+        assert!(line.starts_with("start") && line.ends_with("end"), "{line}");
+        assert_eq!(line.len(), 20005);
+    }
+
+    #[test]
+    fn a_script_ends_though_a_process_it_left_holds_the_output() {
+        let (r, lines) = drive("sleep 8 &\necho done\n", &[]);
+        r.unwrap();
+        assert_eq!(lines, ["done"]);
+    }
+
     /// Lines and backslashes survive the one line per report, and a confirmation follows its
     /// command.
     #[test]

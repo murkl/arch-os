@@ -43,6 +43,8 @@ fi
 # the next start try the system again.
 if [ -n "$esp" ]; then
     mnt="$(mktemp -d)"
+    # A mount left behind keeps the next check of the partition off it.
+    trap 'umount "$mnt" 2>/dev/null || true; rmdir "$mnt"' EXIT
     # Checked first, as mount_esp in lib.sh does, since the tries are written
     # there next.
     fsck.fat -a "$esp" || [ "$?" -eq 1 ] || echo "checking the EFI partition ${esp} failed" >&2
@@ -55,7 +57,6 @@ if [ -n "$esp" ]; then
     else
         echo "cannot mount the EFI partition ${esp}, the Recovery asks instead" >&2
     fi
-    rmdir "$mnt"
 else
     echo "boot partition unknown, the Recovery asks for the disk" >&2
 fi

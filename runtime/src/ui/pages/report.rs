@@ -5,7 +5,7 @@ use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 
 use crate::ui::detail::{Block, Detail, mark, words};
-use crate::ui::{Ctx, Does, Flow, Key, Page};
+use crate::ui::{Ctx, Does, Flow, Key, Nav, Page};
 
 /// Where the page leads once read.
 pub enum Close {
@@ -62,15 +62,15 @@ impl Page for ReportPage {
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
-        vec![("⏎", Does::Continue)]
+        self.detail.hints()
     }
 
     fn key(&mut self, key: Key, ctx: &mut Ctx) -> Flow {
-        match key {
-            Key::Enter | Key::Esc => match &self.close {
+        match key.nav(false) {
+            Some(Nav::Open | Nav::Back) => match &self.close {
                 Close::PopN(n) => Flow::PopN(*n),
             },
-            Key::Ctrl('c') => Flow::Ignored,
+            Some(Nav::Quit) => Flow::Ignored,
             _ => self.detail.key(key, ctx),
         }
     }

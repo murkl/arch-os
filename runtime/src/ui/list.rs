@@ -226,13 +226,21 @@ impl<I: Clone + PartialEq> List<I> {
         &self.rows
     }
 
-    /// Selectable rows matching the filter on label, detail or heading.
-    fn shown(&self) -> Vec<usize> {
-        let query = self
-            .filter
+    fn query(&self) -> String {
+        self.filter
             .as_ref()
             .map(|f| f.text.to_lowercase())
-            .unwrap_or_default();
+            .unwrap_or_default()
+    }
+
+    /// Selectable rows matching the filter on label, detail or heading.
+    fn shown(&self) -> Vec<usize> {
+        let query = self.query();
+        if query.is_empty() {
+            return (0..self.rows.len())
+                .filter(|&i| !self.rows[i].heading)
+                .collect();
+        }
         let mut heading = String::new();
         let mut out = Vec::new();
         for (i, r) in self.rows.iter().enumerate() {
@@ -240,8 +248,7 @@ impl<I: Clone + PartialEq> List<I> {
                 heading = r.label.to_lowercase();
                 continue;
             }
-            if query.is_empty()
-                || r.label.to_lowercase().contains(&query)
+            if r.label.to_lowercase().contains(&query)
                 || r.detail.to_lowercase().contains(&query)
                 || heading.contains(&query)
             {
@@ -251,10 +258,21 @@ impl<I: Clone + PartialEq> List<I> {
         out
     }
 
+    /// The row under the cursor, if the filter shows it. Asked several times a frame, so it
+    /// looks at this row and its heading only.
     pub fn selected(&self) -> Option<&Row<I>> {
-        self.shown()
-            .contains(&self.cursor)
-            .then(|| &self.rows[self.cursor])
+        let row = self.rows.get(self.cursor).filter(|r| !r.heading)?;
+        let query = self.query();
+        let has = |text: &str| text.to_lowercase().contains(&query);
+        let shown = query.is_empty()
+            || has(&row.label)
+            || has(&row.detail)
+            || self.rows[..self.cursor]
+                .iter()
+                .rev()
+                .find(|r| r.heading)
+                .is_some_and(|r| has(&r.label));
+        shown.then_some(row)
     }
 
     pub fn typing(&self) -> bool {
@@ -341,12 +359,15 @@ impl<I: Clone + PartialEq> List<I> {
     pub fn draw(&mut self, area: Rect, buf: &mut Buffer, ctx: &Ctx) {
         let s = &ctx.style;
         let mut y = area.y;
+        if area.height == 0 {
+            return;
+        }
         if let Some(filter) = &self.filter {
             filter.draw(buf, area.x, y, area.width, ctx);
             y += 2;
         }
         let below = self.below(area.width) as u16;
-        let described = self.described && area.bottom().saturating_sub(y) > below + 1;
+        let described = self.described && area.bottom().saturating_sub(y) > below;
         let height = area
             .bottom()
             .saturating_sub(y)
@@ -355,8 +376,12 @@ impl<I: Clone + PartialEq> List<I> {
         let shown = self.shown();
         let query_active = self.filter.as_ref().is_some_and(|f| !f.text.is_empty());
         // Headings stay while a filter is empty. A filtered list is flat.
+        let mut matches = vec![false; self.rows.len()];
+        for &i in &shown {
+            matches[i] = true;
+        }
         let visible: Vec<usize> = (0..self.rows.len())
-            .filter(|&i| shown.contains(&i) || (self.rows[i].heading && !query_active))
+            .filter(|&i| matches[i] || (self.rows[i].heading && !query_active))
             .collect();
         if shown.is_empty() {
             if query_active {

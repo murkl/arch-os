@@ -211,6 +211,9 @@ impl Page for DashboardPage {
     }
 
     fn hints(&self, _: &Ctx) -> Vec<(&'static str, Does)> {
+        if self.checking {
+            return Vec::new();
+        }
         if self.list.typing() {
             return vec![
                 ("↑↓", Does::Choose),
