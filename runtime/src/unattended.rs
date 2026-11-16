@@ -41,10 +41,8 @@ fn drive(
     mut terminal: Terminal<TestBackend>,
     rx: Receiver<Msg>,
 ) -> Result<String, String> {
-    terminal
-        .draw(|f| app.draw(f))
-        .map(drop)
-        .map_err(|e| e.to_string())?;
+    // The offscreen backend cannot fail.
+    let Ok(_) = terminal.draw(|f| app.draw(f));
     app.start();
     loop {
         match rx.recv_timeout(BEAT) {
@@ -52,10 +50,7 @@ fn drive(
             Err(RecvTimeoutError::Timeout) => app.handle(Msg::Tick),
             Err(RecvTimeoutError::Disconnected) => return Err("the interface stopped".into()),
         }
-        terminal
-            .draw(|f| app.draw(f))
-            .map(drop)
-            .map_err(|e| e.to_string())?;
+        let Ok(_) = terminal.draw(|f| app.draw(f));
         if let Some(outcome) = app.finished() {
             return outcome;
         }
