@@ -117,6 +117,7 @@ Walks the ISO unattended:
 - The installed system unlocks its disk from a systemd credential and is reached over SSH as its account, by the key given to the Installer
 - `START=desktop` installs the Desktop profile with the SSH server, boots it like step 2 and checks for GNOME's login screen and a systemd-oomd that watches swap and the session. The repair is the Core's
 - Step 6 is skipped with a notice while no release of the series publishes a Recovery
+- CI passes `GITHUB_TOKEN`, so step 6 asks GitHub as the repository. Hosted runners share an address, which GitHub answers 60 anonymous requests an hour
 
 **Note:** _Needs `qemu-base`, `edk2-ovmf`, `openssh`, `tesseract`, `tesseract-data-eng`, `shellcheck` and a network: the installation downloads its packages, step 6 the Recovery. Logs land in `dist/e2e/`, with a screenshot of the console where it stopped._
 

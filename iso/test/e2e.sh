@@ -241,13 +241,41 @@ shows() {
     }
 }
 
-# Waits for the update's answer. A lookup that failed, offline or with GitHub
-# unreachable, is named rather than left to the timeout.
+# What GitHub still answers the live image: requests left, of how many, and the
+# second the count starts over. Asking for the limit costs none of it.
+github_limit() {
+    live bash -s <<'EOF'
+set -euo pipefail
+curl -fsS --proto '=https' --tlsv1.2 --max-time 30 https://api.github.com/rate_limit |
+    jq -r '.resources.core | "\(.remaining) \(.limit) \(.reset)"'
+EOF
+}
+
+# GitHub answers an address 60 anonymous requests an hour, and hosted runners
+# share theirs. With the run's token the live image asks as the repository, at
+# api.github.com only: curl sends a netrc entry to its machine alone. Read back
+# by its effect, the higher limit.
+github_token() {
+    local left of reset
+    [ -n "${GITHUB_TOKEN:-}" ] || return 0
+    printf 'machine api.github.com login x-access-token password %s\n' "$GITHUB_TOKEN" |
+        live "umask 077 && cat >/root/.netrc && echo netrc-optional >/root/.curlrc"
+    read -r left of reset < <(github_limit) || true
+    [ "${of:-0}" -gt 60 ] || fail "GitHub does not take the run's token: ${left:-no} of ${of:-no} requests"
+    say "GitHub: asked with the run's token, ${left} of ${of} requests left"
+}
+
+# Waits for the update's answer. A lookup GitHub refused or the network lost
+# shows as the page of a stopped or failed action, named here with GitHub's
+# limit rather than left to the timeout.
 update_answers() {
-    shows "page report update|page password ARCH_OS_RECOVERY_UPDATE_PASSWORD|page failure update" 120
-    if traced 1 "page failure update" in_tmux; then
+    local left of reset
+    shows "page report update|page password ARCH_OS_RECOVERY_UPDATE_PASSWORD|page (stopped|failure) update" 120
+    if traced 1 "page (stopped|failure) update" in_tmux; then
         pane >"${WORK}/pane.log" || true
-        fail "the update could not ask GitHub for the releases"
+        live cat /opt/arch-os/recovery.log >"${WORK}/recovery.log" || true
+        read -r left of reset < <(github_limit) || true
+        fail "the update could not ask GitHub for the releases: ${left:-no answer}${of:+ of ${of} requests left until $(date -u -d "@${reset}" +%H:%M) UTC}"
     fi
 }
 
@@ -722,6 +750,7 @@ start repair
 until_ok "$BOOT_TIMEOUT" "ssh into the live image" live true
 live systemctl stop arch-os
 live "printf \"MODULE_LANGUAGE='en'\nARCH_OS_RECOVERY_KEYMAP='us'\nARCH_OS_RECOVERY_DISK='${DISK}'\n\" >/opt/arch-os/recovery.conf"
+github_token
 
 # The disk's Recovery is this build, and no published one is newer.
 live "tmux new-session -d -s e2e -x 120 -y 40 'arch-os recovery --trace ${LIVE_TRACE}'"
