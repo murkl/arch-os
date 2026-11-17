@@ -15,8 +15,8 @@ const PASSWORD: &str = r#"password() {
     local again=""
     [ -z "${!1:-}" ] || return 0
     while :; do
-        read -rsp "$2: " "${1?}" </dev/tty
-        read -rsp $'\nRepeat: ' again </dev/tty
+        IFS= read -rsp "$2: " "${1?}" </dev/tty
+        IFS= read -rsp $'\nRepeat: ' again </dev/tty
         echo
         if [ "${!1}" != "$again" ]; then
             echo 'The two entries do not match.'
@@ -112,7 +112,7 @@ pub fn head(
             out += &match s.kind {
                 Kind::NewPassword => format!("password {name} {title}\n"),
                 _ => format!(
-                    "[ -n \"${{{name}:-}}\" ] || {{ read -rsp {} {name} </dev/tty; echo; }}\n",
+                    "[ -n \"${{{name}:-}}\" ] || {{ IFS= read -rsp {} {name} </dev/tty; echo; }}\n",
                     quote(&format!("{}: ", s.title))
                 ),
             };
@@ -174,6 +174,33 @@ mod tests {
         dir.join("setup.sh")
     }
 
+    /// A typed password keeps its outer spaces, as the password page does.
+    #[test]
+    fn a_typed_password_keeps_its_spaces() {
+        let typed = |shell: &str| {
+            let out = std::process::Command::new("bash")
+                .arg("-c")
+                .arg(shell.replace("</dev/tty", ""))
+                .stdin(std::fs::File::open("/dev/null").unwrap())
+                .env("TUX_INPUT", " a b \n a b \n")
+                .output()
+                .unwrap();
+            String::from_utf8(out.stdout).unwrap()
+        };
+        let input = r#"exec < <(printf "$TUX_INPUT")"#;
+        let asked = typed(&format!(
+            "{input}\n{PASSWORD}\npassword TUX_NEW New >/dev/null\nprintf '[%s]' \"$TUX_NEW\""
+        ));
+        assert_eq!(asked, "[ a b ]");
+        let old = secret("TUX_OLD", Kind::Password, "Old");
+        let text = head("Setup", "setup.sh", "", &[&old], None);
+        let line = text.lines().find(|l| l.contains("TUX_OLD")).unwrap();
+        let asked = typed(&format!(
+            "{input}\n{line} >/dev/null\nprintf '[%s]' \"$TUX_OLD\""
+        ));
+        assert_eq!(asked, "[ a b ]");
+    }
+
     /// The head asks what the run asked: passwords, a new one twice, then the confirmation.
     #[test]
     fn the_head_asks_what_the_run_asked() {
@@ -196,7 +223,7 @@ mod tests {
             "{text}"
         );
         assert!(
-            text.contains("read -rsp 'Disk password: ' TUX_UNLOCK </dev/tty"),
+            text.contains("IFS= read -rsp 'Disk password: ' TUX_UNLOCK </dev/tty"),
             "{text}"
         );
         assert!(

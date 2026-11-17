@@ -36,11 +36,13 @@ jobs:
     outputs:
       image: ${{ steps.scope.outputs.image }}
     steps:
-      # multilib for the Installer's lib32 package checks. git refuses root a
-      # checkout owned by the runner's user.
+      # multilib for the Installer's lib32 package checks. The keyring first,
+      # since the pinned image may lack a key newer packages are signed with. git
+      # refuses root a checkout owned by the runner's user.
       - run: |
           printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' >>/etc/pacman.conf
-          pacman -Syu --needed --noconfirm git make rust shellcheck shfmt zsh yamllint \
+          pacman -Sy --needed --noconfirm archlinux-keyring
+          pacman -Su --needed --noconfirm git make rust shellcheck shfmt zsh yamllint \
             actionlint zizmor gettext diffutils gitleaks jq kbd terminus-font tzdata xkeyboard-config \
             gjs libadwaita desktop-file-utils
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -109,9 +111,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      # git refuses root a checkout owned by the runner's user.
+      # The keyring first, as in Check. git refuses root a checkout owned by the
+      # runner's user.
       - run: |
-          pacman -Syu --needed --noconfirm git make rust archiso systemd-ukify diffutils \
+          pacman -Sy --needed --noconfirm archlinux-keyring
+          pacman -Su --needed --noconfirm git make rust archiso systemd-ukify diffutils \
             kbd terminus-font qemu-base edk2-ovmf tesseract tesseract-data-eng openssh shellcheck
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 

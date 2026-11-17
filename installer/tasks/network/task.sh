@@ -13,15 +13,11 @@ iwd_setting() {
     ' "$1"
 }
 
-# The passphrase $1 as the psk of the keyfile on stdin, escaped as GLib writes a
-# value. Not through nmcli, which takes it on the command line only.
+# The passphrase $1 as the psk of the keyfile on stdin. iwd stores it escaped as
+# GLib reads a keyfile value. Not through nmcli, which takes it on the command
+# line only.
 with_psk() {
-    local value="${1//\\/\\\\}" spaces=""
-    while [[ $value == " "* ]]; do
-        spaces+='\s'
-        value="${value# }"
-    done
-    PSK="${spaces}${value}" awk '{ print } $0 == "[wifi-security]" && ENVIRON["PSK"] != "" { print "psk=" ENVIRON["PSK"] }'
+    PSK="$1" awk '{ print } $0 == "[wifi-security]" && ENVIRON["PSK"] != "" { print "psk=" ENVIRON["PSK"] }'
 }
 
 # Every Wi-Fi network the live system joined, so the first boot is online. iwd
