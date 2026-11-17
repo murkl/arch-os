@@ -21,9 +21,9 @@ docker)
     run mkdir -p "${MNT}/etc/docker"
     render "$(where)/daemon.json" BIND="$bind" | write_file "${MNT}/etc/docker/daemon.json"
 
-    # Started at boot, so restart policies bring containers back. No docker
-    # group, which is root without a password: docker runs through sudo.
-    run arch-chroot "$MNT" systemctl enable docker.service
+    # Started by the first call, so boot does not wait for the network. No
+    # docker group, which is root without a password: docker runs through sudo.
+    run arch-chroot "$MNT" systemctl enable docker.socket
     ;;
 
 podman)

@@ -2,7 +2,7 @@ has_command "$ARCH_OS_CONTAINER_ENGINE"
 
 case "$ARCH_OS_CONTAINER_ENGINE" in
 docker)
-    arch-chroot "$MNT" systemctl is-enabled docker.service >/dev/null
+    arch-chroot "$MNT" systemctl is-enabled docker.socket >/dev/null
     arch-chroot "$MNT" dockerd --validate --config-file /etc/docker/daemon.json >/dev/null
     if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
         grep -q '"ip": "127.0.0.1"' "${MNT}/etc/docker/daemon.json"
