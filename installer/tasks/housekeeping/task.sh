@@ -24,6 +24,8 @@ run mkdir -p "${MNT}/usr/local/lib/arch-os"
 render "$(where)/smartd-notify" TITLE="$DISK_ALERT" | write_file "${MNT}/usr/local/lib/arch-os/smartd-notify"
 run chmod 755 "${MNT}/usr/local/lib/arch-os/smartd-notify"
 render "$(where)/smartd.conf" | write_file "${MNT}/etc/smartd.conf"
+run mkdir -p "${MNT}/etc/systemd/system/smartd.service.d"
+render "$(where)/no-disk.conf" | write_file "${MNT}/etc/systemd/system/smartd.service.d/no-disk.conf"
 
 # Skipped offline instead of failed.
 run mkdir -p "${MNT}/etc/systemd/system/reflector.service.d"

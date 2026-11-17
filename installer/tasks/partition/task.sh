@@ -58,18 +58,19 @@ old_parts="$(lsblk -nro PARTUUID "$ARCH_OS_DISK" | awk 'NF { printf "%s ", tolow
 uuid() { cat /proc/sys/kernel/random/uuid; }
 
 run wipefs -af "$ARCH_OS_DISK"
-run sgdisk --zap-all "$ARCH_OS_DISK"
+# Exit 2 on a damaged GPT, which it still wipes.
+run sgdisk --zap-all "$ARCH_OS_DISK" || allow 2
 run sgdisk -o "$ARCH_OS_DISK"
-run sgdisk -n 1:0:+1G -t 1:ef00 -c 1:boot -u "1:$(uuid)" --align-end "$ARCH_OS_DISK"
+run sgdisk --align-end -n 1:0:+1G -t 1:ef00 -c 1:boot -u "1:$(uuid)" "$ARCH_OS_DISK"
 
 # 8304 is the x86-64 root type systemd finds the root by. The Recovery
 # partition gets RECOVERY_MIB plus 2 MiB, since the backup GPT takes the last
 # sectors.
 if [ "$ARCH_OS_RECOVERY_ENABLED" = "true" ]; then
-    run sgdisk -n "2:0:-$((RECOVERY_MIB + 2))M" -t 2:8304 -c 2:root -u "2:$(uuid)" --align-end "$ARCH_OS_DISK"
+    run sgdisk --align-end -n "2:0:-$((RECOVERY_MIB + 2))M" -t 2:8304 -c 2:root -u "2:$(uuid)" "$ARCH_OS_DISK"
     run sgdisk -n 3:0:0 -t 3:8300 -c 3:recovery -u "3:$(uuid)" "$ARCH_OS_DISK"
 else
-    run sgdisk -n 2:0:0 -t 2:8304 -c 2:root -u "2:$(uuid)" --align-end "$ARCH_OS_DISK"
+    run sgdisk --align-end -n 2:0:0 -t 2:8304 -c 2:root -u "2:$(uuid)" "$ARCH_OS_DISK"
 fi
 run partprobe "$ARCH_OS_DISK"
 

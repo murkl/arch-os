@@ -6,5 +6,9 @@ arch-chroot "$MNT" systemctl is-enabled NetworkManager >/dev/null
 for profile in /var/lib/iwd/*.psk /var/lib/iwd/*.open; do
     [ -f "$profile" ] || continue
     name="$(basename "$profile")"
-    [ "$(stat -c %a "${MNT}/etc/NetworkManager/system-connections/${name%.*}.nmconnection")" = 600 ]
+    keyfile="${MNT}/etc/NetworkManager/system-connections/${name%.*}.nmconnection"
+    [ "$(stat -c %a "$keyfile")" = 600 ]
+    # Both store the passphrase with GLib's escapes, so it is carried verbatim.
+    passphrase="$(sed -n 's/^Passphrase=//p' "$profile")"
+    [ -z "$passphrase" ] || grep -qxF "psk=${passphrase}" "$keyfile"
 done

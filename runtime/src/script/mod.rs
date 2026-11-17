@@ -166,6 +166,8 @@ fn bash(
         .arg(payload)
         .arg(lib()?)
         .args(rest);
+    // Set by the runtime alone, so an inherited value never reaches a real run.
+    cmd.env_remove(spec::DRY_RUN).env_remove(spec::SCRIPT);
     cmd.envs(env.iter().map(|(k, v)| (k.as_str(), v.as_str())));
     Ok(cmd)
 }
@@ -485,6 +487,24 @@ pub mod tests {
         }
         let _ = session;
         panic!("the script did not end");
+    }
+
+    /// DRY_RUN and MODULE_SCRIPT come from the run, never from the caller's environment.
+    #[test]
+    fn a_script_sees_only_the_runs_own_flags() {
+        let flags = |env: &[(String, String)]| {
+            let cmd = bash(SNIPPET, "", &[], env).unwrap();
+            cmd.get_envs()
+                .filter(|(k, _)| *k == spec::DRY_RUN || *k == spec::SCRIPT)
+                .map(|(k, v)| format!("{}={:?}", k.display(), v.map(|v| v.display().to_string())))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(flags(&[]), ["DRY_RUN=None", "MODULE_SCRIPT=None"]);
+        let dry = [(spec::DRY_RUN.to_string(), spec::TRUE.to_string())];
+        assert_eq!(
+            flags(&dry),
+            ["DRY_RUN=Some(\"true\")", "MODULE_SCRIPT=None"]
+        );
     }
 
     /// A line longer than a pipe's buffer arrives in pieces.

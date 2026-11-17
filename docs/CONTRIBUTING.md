@@ -199,7 +199,7 @@ The images are generated, so none shows an outdated interface. CI never renders 
 | `Release` | Version tag | Checks the tag and writes the release notes |
 | `Publish` | Version tag | Attaches the files `Image` booted to a draft page and publishes it |
 
-- A merge into `main` starts no run, since its pull request already passed `Check` and `Image`
+- A merge into `main` starts no run, since its pull request passed `Check` and `Image` on the current `main`
 - Pull requests read the build cache. Monday's run and a manual run on `main` write it. A version tag builds without it
 - A Desktop is also installed on Monday and on a manual run (**Run workflow** in the Actions tab). Locally, `make e2e START=desktop` does it
 
