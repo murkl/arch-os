@@ -15,6 +15,7 @@ alias logs="systemctl --failed; echo; journalctl -p 3 -b"
 alias q="exit"
 alias c="clear"
 command -v fastfetch &>/dev/null && alias fetch="fastfetch"
+command -v system-manager &>/dev/null && alias sm="system-manager"
 # Not as root: pacdiff -s calls sudoedit, which opens the account's editor.
 alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
 command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
