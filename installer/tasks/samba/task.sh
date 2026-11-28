@@ -26,6 +26,7 @@ run arch-chroot "$MNT" systemctl enable smb.service
 run arch-chroot "$MNT" systemctl enable wsdd.service
 
 # home only: on public Wi-Fi anybody there can guess the share's password.
+# wsdd's ports lie in the range home opens anyway.
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
-    run arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=samba --add-service=ws-discovery-host
+    run arch-chroot "$MNT" firewall-offline-cmd --zone=home --add-service=samba
 fi

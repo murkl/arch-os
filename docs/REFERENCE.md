@@ -334,7 +334,7 @@ Every account starts with the same defaults and can change them.
 | Zone | Where | Allows |
 | --- | --- | --- |
 | `public` | Every network not marked | `dhcpv6-client`, `mdns` with GNOME, `ssh` with the SSH server |
-| `home` | Networks marked as trusted | firewalld's default set. With GNOME also `32768-60999/tcp`, `rdp` and `ssdp`. With file sharing also `samba` and `ws-discovery-host` |
+| `home` | Networks marked as trusted | firewalld's default set and every port from `1025`. With file sharing also `samba` |
 
 No machine can tell a café's Wi-Fi from a home network, so a network is trusted only once it is marked:
 
@@ -342,13 +342,14 @@ No machine can tell a café's Wi-Fi from a home network, so a network is trusted
 nmcli connection modify <name> connection.zone home
 ```
 
+With the shell enhancement, `zone-home` marks the active Ethernet and Wi-Fi networks and `zone-public` unmarks them.
+
 | Service | Zone | Why |
 | --- | --- | --- |
 | `mdns` | `public` | mDNS replies arrive as multicast, which connection tracking cannot match. They reveal nothing beyond Avahi's announcements |
 | `ssh` | `public` | Reachable from any network, so it takes keys only |
-| `32768-60999/tcp` | `home` | GNOME's file and media sharing listen on a random port from `ip_local_port_range` and ask for no password by default |
-| `rdp`, `ssdp` | `home` | GNOME's remote desktop, and players that look for its media sharing. On a café's Wi-Fi anyone could try them |
-| `samba`, `ws-discovery-host` | `home` | On a café's Wi-Fi anyone could try the account password against a share |
+| `1025-65535` | `home` | Sharing, pairing and local servers, such as GNOME's sharing and remote desktop, listen above the privileged ports, some on a random one. On a café's Wi-Fi anyone could try them |
+| `samba` | `home` | On a café's Wi-Fi anyone could try the account password against a share |
 
 - Docker bypasses firewalld. With the firewall, its published ports therefore bind to `127.0.0.1`, and `-p 0.0.0.0:8080:80` publishes one to the network. **[➜ Docker](https://docs.docker.com/engine/network/packet-filtering-firewalls/)**
 - The SSH server takes keys only, set in `/etc/ssh/sshd_config.d/10-arch-os.conf`. The Installer asks for the account's key and writes it to `~/.ssh/authorized_keys`. It accepts a public key or a URL such as `https://github.com/<user>.keys`

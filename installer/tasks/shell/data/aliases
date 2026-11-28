@@ -20,6 +20,12 @@ command -v system-manager &>/dev/null && alias sm="system-manager"
 alias pacnew="env DIFFPROG=\$EDITOR pacdiff -s"
 command -v meld &>/dev/null && alias pacnew="env DIFFPROG=meld pacdiff -s"
 command -v xdg-open &>/dev/null && alias open="xdg-open"
+
+# Marks the active Ethernet and Wi-Fi networks as trusted or not:
+# docs/REFERENCE.md#firewall
+command -v firewall-cmd &>/dev/null && alias zone-home="nmcli -g TYPE,UUID connection show --active | sed -n 's/^802-[^:]*://p' | xargs -I{} nmcli connection modify {} connection.zone home"
+command -v firewall-cmd &>/dev/null && alias zone-public="nmcli -g TYPE,UUID connection show --active | sed -n 's/^802-[^:]*://p' | xargs -I{} nmcli connection modify {} connection.zone ''"
+
 alias ..="cd .."
 alias ...="cd ../.."
 
