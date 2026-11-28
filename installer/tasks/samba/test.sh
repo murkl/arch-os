@@ -14,7 +14,6 @@ params="$(grep '^WSDD_PARAMS=' "${MNT}/etc/conf.d/wsdd" | tail -n 1)"
 
 if [ "$ARCH_OS_FIREWALL_ENABLED" = "true" ]; then
     arch-chroot "$MNT" firewall-offline-cmd --zone=home --query-service=samba >/dev/null
-    arch-chroot "$MNT" firewall-offline-cmd --zone=home --query-service=ws-discovery-host >/dev/null
     if arch-chroot "$MNT" firewall-offline-cmd --zone=public --query-service=samba >/dev/null; then
         echo "samba open in public, not only in home" >&2
         exit 1

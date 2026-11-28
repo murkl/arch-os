@@ -237,8 +237,8 @@ settings:
       title: Firewall
       description: |
         Blocks incoming connections except the SSH server and, with GNOME,
-        printer discovery. File sharing works on networks marked home: nmcli
-        connection modify <name> connection.zone home
+        printer discovery. Networks marked home also allow ports from 1025 and
+        file sharing: nmcli connection modify <name> connection.zone home
       default: true
 
     - name: ARCH_OS_SSH_SERVER_ENABLED

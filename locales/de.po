@@ -383,8 +383,8 @@ msgstr "Docker nutzt einen Root-Daemon über sudo. Podman kommt ohne Daemon aus 
 msgid "Firewall"
 msgstr "Firewall"
 
-msgid "Blocks incoming connections except the SSH server and, with GNOME, printer discovery. File sharing works on networks marked home: nmcli connection modify <name> connection.zone home"
-msgstr "Blockiert eingehende Verbindungen außer dem SSH-Server und, mit GNOME, der Druckersuche. Die Dateifreigabe funktioniert in als Heimnetz markierten Netzen: nmcli connection modify <name> connection.zone home"
+msgid "Blocks incoming connections except the SSH server and, with GNOME, printer discovery. Networks marked home also allow ports from 1025 and file sharing: nmcli connection modify <name> connection.zone home"
+msgstr "Blockiert eingehende Verbindungen außer dem SSH-Server und, mit GNOME, der Druckersuche. Als Heimnetz markierte Netze erlauben zusätzlich die Ports ab 1025 und die Dateifreigabe: nmcli connection modify <name> connection.zone home"
 
 msgid "SSH server"
 msgstr "SSH-Server"
