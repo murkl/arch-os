@@ -146,7 +146,7 @@ A good start restores the tries of both entries. No entry is the default, since 
 | `vt.global_cursor_default=0` | Hides the console cursor. `/etc/issue.d/cursor.issue` restores it at each login |
 | `splash plymouth.ignore-serial-consoles` | Set with the boot splash. Every VM has a serial console, which would switch Plymouth to text mode, password prompt included |
 | `plymouth.use-simpledrm=0` | Set with encryption. The password prompt waits for the graphics driver instead of appearing twice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)** |
-| `plymouth.splash-delay=3` | Set with encryption. Splash and password prompt appear together. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
+| `plymouth.splash-delay=3` | Set with encryption. Splash and password prompt appear together. The shutdown splash starts without it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
 
 ### Initramfs
 

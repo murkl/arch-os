@@ -665,6 +665,12 @@ if [ "$START" = desktop ]; then
     until_ok "$BOOT_TIMEOUT" "systemd-oomd watching swap and the session" oomd_watches
     say "Desktop: systemd-oomd watches swap and the session"
 
+    # sh -x shows the command line plymouthd gets at a shutdown, --help ends it.
+    line="$(installed "sh -x /usr/local/lib/arch-os/plymouthd-shutdown --help 2>&1 >/dev/null" | grep '^+ exec ' || true)"
+    [[ $line == *--kernel-command-line=*plymouth.use-simpledrm=0* && $line != *splash-delay* ]] ||
+        fail "the shutdown splash waits for the boot's delay: ${line:-plymouthd not started}"
+    say "Desktop: the shutdown splash starts without the boot's delay"
+
     # No session comes up: the shell masked for every user, the wait shortened.
     as_root systemctl --global mask org.gnome.Shell@.service
     as_root "sh -c 'mkdir -p /etc/systemd/system/arch-os-session-up.service.d && printf \"[Service]\\nExecStart=\\nExecStart=/usr/local/lib/arch-os/session-up.sh 30\\n\" >/etc/systemd/system/arch-os-session-up.service.d/e2e.conf'"
