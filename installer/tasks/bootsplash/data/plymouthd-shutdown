@@ -1,0 +1,5 @@
+#!/bin/sh
+# Written by Arch OS. plymouthd reads its splash delay from the kernel command
+# line, where it is meant for the boot. On a shutdown shorter than the delay no
+# splash would appear.
+exec /usr/bin/plymouthd "$@" --kernel-command-line="$(sed 's/ *plymouth\.splash-delay=[^ ]*//' /proc/cmdline)"

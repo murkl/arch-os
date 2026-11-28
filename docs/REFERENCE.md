@@ -20,17 +20,13 @@ Each page names its keys in the footer.
 
 | Key | Does |
 | --- | --- |
-| **↑↓**, **j k**, wheel | Choose, scroll |
-| **⇞⇟** | Page up, page down |
-| **g G**, **home end** | First, last |
-| **⏎**, **l**, **→** | What the footer names |
-| **esc**, **h**, **←**, **backspace** | Back |
-| **f**, **/** | Filter |
-| **tab** | Run: details, compact |
-| **r** | Requirement: check again |
-| **q**, **ctrl+c** | Quit |
-
-In a text box, letters are typed and **backspace** deletes one. **ctrl+w** and **alt+backspace** delete the word before, **ctrl+u** everything, and in a password box **alt+backspace** does too. A held key repeats only to move and type.
+| `↑` `↓` | Choose, also `j` `k` |
+| `⏎` | Open, also `l` |
+| `esc` | Back, also `backspace` `h` |
+| `f` | Filter |
+| `tab` | Details of a run |
+| `r` | Check a requirement again |
+| `q` | Quit, also `ctrl+c` |
 
 ### Answers
 
@@ -47,7 +43,7 @@ Every command that changes the system is shown and recorded in three places.
 
 | Place | Form |
 | --- | --- |
-| **tab** | A box named after the step, above the command's output |
+| `tab` | A box named after the step, above the command's output |
 | `installer.log` | One line per command |
 | `installer.sh` | A script of all commands |
 
@@ -150,7 +146,7 @@ A good start restores the tries of both entries. No entry is the default, since 
 | `vt.global_cursor_default=0` | Hides the console cursor. `/etc/issue.d/cursor.issue` restores it at each login |
 | `splash plymouth.ignore-serial-consoles` | Set with the boot splash. Every VM has a serial console, which would switch Plymouth to text mode, password prompt included |
 | `plymouth.use-simpledrm=0` | Set with encryption. The password prompt waits for the graphics driver instead of appearing twice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)** |
-| `plymouth.splash-delay=3` | Set with encryption. Splash and password prompt appear together. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
+| `plymouth.splash-delay=3` | Set with encryption. Splash and password prompt appear together. The shutdown splash starts without it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
 
 ### Initramfs
 

@@ -72,7 +72,7 @@ MODULE_SHELL = $(wildcard $(addsuffix /tasks/*/data/bashrc,$(MODULES)) $(addsuff
 MODULE_ZSH   = $(wildcard $(addsuffix /tasks/*/data/zshrc,$(MODULES)))
 
 # Listed by name, since it has no extension.
-MODULE_PROGRAMS := installer/tasks/housekeeping/data/smartd-notify
+MODULE_PROGRAMS := installer/tasks/housekeeping/data/smartd-notify installer/tasks/bootsplash/data/plymouthd-shutdown
 
 MODULE_DESKTOP = $(shell find $(MODULES) -name '*.desktop')
 

@@ -7,3 +7,10 @@ while read -r image; do
     grep -q 'themes/arch-os/' <<<"$contents"
     grep -q 'gpu/drm/' <<<"$contents"
 done < <(boot_images)
+
+# Every shutdown splash starts without the boot's delay. Listed, so a renamed
+# unit in the package fails here.
+for unit in plymouth-halt plymouth-kexec plymouth-poweroff plymouth-reboot; do
+    grep -q '^ExecStart=/usr/local/lib/arch-os/plymouthd-shutdown --mode=' "${MNT}/etc/systemd/system/${unit}.service.d/10-arch-os.conf"
+    [ -z "$(unit_complaints "${unit}.service")" ]
+done
