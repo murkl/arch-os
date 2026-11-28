@@ -12,6 +12,7 @@ run chmod 755 "${MNT}/usr/local/lib/arch-os/plymouthd-shutdown"
 # Each shutdown splash starts through it, with the package's arguments, so
 # each unit keeps its mode.
 for unit in "${MNT}"/usr/lib/systemd/system/plymouth-*.service; do
+    [ -f "$unit" ] || continue # no match, caught by the test's unit list
     args="$(sed -n 's|^ExecStart=/usr/bin/plymouthd \(--mode=[a-z]* .*\)|\1|p' "$unit")"
     case "$args" in "" | --mode=boot*) continue ;; esac
     unit="$(basename "$unit")"
