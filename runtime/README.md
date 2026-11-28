@@ -32,7 +32,7 @@ locales/<code>.po   one catalog per language
 runtime/            this program
 ```
 
-The build embeds every file above except `runtime/`, so the binary is the whole program. At start it writes the scripts to `$XDG_RUNTIME_DIR/arch-os-<pid>/` and runs them there. The folder is removed on exit, a stale one at the next start.
+The build embeds every file above except `runtime/`, so the binary is the whole program.
 
 ### `product.yaml`
 
@@ -48,6 +48,7 @@ surface: "#3b4252"
 console-surface: blue
 status:
   check: check_online()
+  every: 30
   pass: Online
   fail: Offline
 actions:
@@ -159,9 +160,9 @@ The module's home: rows in `dashboard` order, each name once. `f` filters.
 
 A blank row follows `start`, the answers and each action group. After `start`, the answer headings take its place.
 
-`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to the running task's title and output, during and after the run. With `script`, the title heads a box with the command it runs, and each new command starts the output over. `systemd-inhibit` blocks shutdown and sleep while tasks run, so closing the lid never suspends a run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, and **Back to the dashboard** with a confirmation.
+`start` asks what is missing, then every password, then `confirm`, then runs the tasks: one row each, checked off when done, counted in the header. `tab` switches to the running task's title and output. Shutdown and sleep wait while tasks run. A task with `asks` or `confirm` pauses the run on its page. The header names the outcome, **Done** or **Failed**. A finished run shows `report`, its duration, the actions under `on: success` and **Continue**. A failed run shows what failed and where, and **Back to the dashboard** with a confirmation.
 
-`q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it and leads with **Back to the run**. The run continues behind it, and its questions wait until the page closes. A choice stops the run first: its script and everything it started get `SIGTERM`, after 10 seconds `SIGKILL`. The choice runs once none of it is left. `SIGTERM`, `SIGHUP` and `SIGINT` to the program stop a run the same way, then end it.
+`q` or `esc` on the dashboard leaves. With `on: leave`, or in a kiosk, a page comes first: the actions under `on: leave`, then **Exit**, or **Start over** in a kiosk. During a run the same page warns that every choice stops it and leads with **Back to the run**. The run continues behind it, and a choice stops it first.
 
 ## Settings
 
@@ -219,8 +220,6 @@ The type sets the widget and the allowed keys:
 - A `list` answer is checked against its `options-from` again at the start of the work, before any password. One no longer listed is asked again
 - An answer from the file passes `pattern` and the list like a typed one. One that fails is asked again
 
-**Note:** _Refused at startup: a key the type does not take, `value-from` with `prefill` or `first`, `filter` with `first`, a password with `first`._
-
 ### Conditions
 
 ```yaml
@@ -274,9 +273,7 @@ stages:
 | `errors` | Text for each status its `task.sh` stops with. **[➜ Stopping on Purpose](#stopping-on-purpose)** |
 | `texts` | `NAME: text` pairs its scripts get as variables, translated into the interface language. For text it writes into the system. A setting's name is refused |
 
-- A task runs after every task of earlier stages, within its stage after its `needs`, otherwise in file order
-- Refused: a `needs` into another stage, an unknown name, a cycle
-- Refused: a task without folder, a folder under `tasks/` without task, a stage without tasks, two tasks with one name
+A task runs after every task of earlier stages, within its stage after its `needs`, otherwise in file order.
 
 ### Tests
 
@@ -297,7 +294,7 @@ A module with `script` keeps its run as `<module>.sh` beside the answers: every 
 | Confirmation | `confirm` with the answers filled in, opening on No |
 | Commands | In run order, under a ruler with their task's title |
 
-A task records a command on fd 3 before it runs: `cmd`, a tab and the shell text, a newline as `\n` and a backslash as `\\`. `cmd-ok` confirms it once it succeeded. The script holds confirmed commands only, so one that failed stays out, also where a fallback caught it. `lib.sh` records through `run`, `run_sh` and `write_file`.
+The script holds only commands that succeeded, recorded through `run`, `run_sh` and `write_file` in `lib.sh`.
 
 - Only tasks get `MODULE_SCRIPT`, never tests or actions, and only they record
 - A command names a password by its variable, such as `"$ARCH_OS_PASSWORD"`, never by its value
@@ -350,7 +347,7 @@ actions:
 
 - A row opens the inputs, `confirm`, the work and `report` in turn. A longer flow is several actions chained by `on: failure`
 - `on: leave` declares that the machine booted for the module, so leaving becomes a choice
-- Refused at startup: an unknown name, an action nothing names, a `product.yaml` action no module names, an action declared again in `module.yaml`, a cycle, an action naming itself under `on: failure`, a page beside `tty`, a page or `confirm` on a check-only action, `errors` beside `tty`, a check without `error`, an input or `confirm` under `on: leave`
+- The program refuses at startup what does not fit together, and names it
 
 ## Script Environment
 
@@ -431,7 +428,7 @@ Exit status 0 where the work finished, 1 where it failed or could not start: a r
 
 A row is named by what choosing it picks: on the dashboard `start`, `reset`, `language`, a setting's name or an action's id, in a list its value or `own` for the custom entry, on a confirmation `yes` or `no`, on the leave page `back`, an action's id or `exit`, a profile by its position.
 
-**Note:** _The images pass `--trace` only with the systemd credential `arch-os.trace` set, its value the file, such as `/dev/virtio-ports/arch-os.trace`. **[➜ Boot Tests](../iso/README.md#boot-tests)**_
+**Note:** _The images pass `--trace` only with the systemd credential `arch-os.trace` set, its value the file, such as `/dev/virtio-ports/arch-os.trace`. **[➜ Boot Tests](../docs/CONTRIBUTING.md#boot-tests)**_
 
 ## Files
 
@@ -443,29 +440,10 @@ In the start directory:
 | `<module>.log` | Run progress and all script output, timestamped in the machine's time zone. The log of the previous run stays as `<module>.log.old` |
 | `<module>.sh` | The run as a script, in a module with `script`. **[➜ Script](#script)** |
 
-## Keys
-
-| Key | Meaning |
-| --- | --- |
-| `⏎` `→` `l` | What the footer names, such as open, use or run |
-| `esc` `←` `h` `backspace` | What the footer names: back, dashboard, close filter or stop |
-| `↑` `↓` `k` `j` | Choose or scroll |
-| `⇞` `⇟` `g` `G` | Page up, page down, top, bottom |
-| `f` `/` | Filter a list, where the footer shows it |
-| `q` `ctrl+c` | Quit |
-| `r` | Reload a failed requirement |
-| `tab` | A run's details or compact view |
-
-**Note:** _An empty text box shows its question's title as placeholder, or **Repeat** for the second password. In a text box every letter types, backspace deletes one and `alt+backspace` the word before, in a password box everything. Pasted text goes into a text box and is ignored elsewhere. A held key repeats only for moving and typing._
-
 ## Translations
 
-The English text is the key, a missing translation shows English. **[➜ Translating](../docs/CONTRIBUTING.md#translating)**
-
-- `msgid "English"` becomes the language's own name on the language page: `Deutsch`
-- The language is chosen on the first page and stored first in the answer file as `MODULE_LANGUAGE`. A file holding one skips the page
-- The first page is never translated: it appears before a language is chosen
+The English text is the key, and the first page is never translated. **[➜ Translating](../docs/CONTRIBUTING.md#translating)**
 
 ## Console
 
-A 16-color terminal, such as the console (`TERM=linux`), shows every color in the slot of its hue, and the accent in the `console-accent` slot: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, or any of them with `bright-`. Lines and marks switch to what a console font holds. `arch-os glyphs` prints every character the interface draws there, for the ISO's font check. **[➜ Console Glyphs](../iso/README.md#console-glyphs)**
+A 16-color terminal, such as the console (`TERM=linux`), shows every color in the slot of its hue, and the accent in the `console-accent` slot: `red`, `green`, `yellow`, `blue`, `magenta`, `cyan`, `white`, or any of them with `bright-`. Lines and marks switch to what a console font holds. `arch-os glyphs` prints every character the interface draws there, for the ISO's font check. **[➜ Console Glyphs](../docs/CONTRIBUTING.md#console-glyphs)**

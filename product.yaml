@@ -13,7 +13,7 @@ logo: |
   ██   ██ ██   ██ ██      ██   ██     ██    ██      ██
   ██   ██ ██   ██  ██████ ██   ██      ██████  ███████
 
-# Arch blue, and its console slot: iso/README.md#console
+# Arch blue, and its console slot: docs/CONTRIBUTING.md#console
 accent: "#1793d1"
 console-accent: bright-blue
 surface: "#3b4252"

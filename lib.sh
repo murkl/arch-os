@@ -401,8 +401,9 @@ clear_loader_default() {
     bootctl set-default '' || echo "firmware default boot entry not cleared" >&2
 }
 
-# Logs and kills what still holds the target. Why -R and -M:
-# docs/CONTRIBUTING.md#closing-the-target
+# Logs and kills what still holds the target. -R, never -A, which reaches beyond
+# the target and would unmount the rollback's snapshots. fuser -M, since a
+# target that is no mount point resolves to the live system.
 unmount_target() {
     mountpoint -q "$MNT" || return 0
     umount -R "$MNT" && return 0
@@ -441,7 +442,7 @@ open_shell() {
 # ////////////////////////////////////////////////////////////////////////////
 
 # {{NAME}} filled from NAME=value, every $ kept. Unfilled placeholders and unused
-# values fail. Why not envsubst: docs/CONTRIBUTING.md#templates
+# values fail. Not envsubst, which reads the environment and empties unset names.
 render() {
     local template="$1" open='{{' close='}}' text rendered="" name pair
     local -A values=() used=()
@@ -649,8 +650,8 @@ boot_kind() { if secure_boot_wanted; then echo uki; else echo image; fi; }
 # A check against the other kind's images checks nothing.
 boot_images() { images_of "$(boot_kind)"; }
 
-# The Recovery image the ISO carries beside the Installer. Boot flow:
-# docs/REFERENCE.md
+# The Recovery image the ISO carries beside the Installer:
+# docs/REFERENCE.md#recovery-partition
 export RECOVERY_IMAGE=/opt/arch-os-recovery
 
 # On the EFI partition, where systemd-boot lists it on its own.
@@ -738,7 +739,8 @@ AUR_RETRIES=3
 AUR_TIMEOUT=2700
 
 # Built as the user, with passwordless sudo for pacman only and for the build
-# only. One compile job per GiB of RAM: docs/REFERENCE.md
+# only. One compile job per GiB of RAM, since more run a live system out of
+# memory.
 chroot_aur_install() {
     local repo="$1"
     local url="https://aur.archlinux.org/${repo}.git"

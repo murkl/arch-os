@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Starts Arch OS from the tty1 unit or by hand: arch-os installer, arch-os
-# recovery. The font goes first, since it decides which glyphs exist: README.md.
+# recovery. The font goes first, since it decides which glyphs exist: docs/CONTRIBUTING.md#console-glyphs.
 set -eu
 
 SIZES="32 16"

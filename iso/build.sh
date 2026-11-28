@@ -1,6 +1,6 @@
 #!/bin/bash
 # Builds the Recovery image from `baseline` and the ISO from `releng` around the
-# program `make build` built. See README.md.
+# program `make build` built. See docs/CONTRIBUTING.md#images.
 #
 #   build.sh <arch-os> <dist-dir>
 set -eu
@@ -45,7 +45,7 @@ PLYMOUTH_THEME_REPO="https://github.com/murkl/plymouth-theme-arch-os"
 PLYMOUTH_THEME_REF="b1b784e55b74535afb61f66b85f4c0e916497e4d"
 
 # Console palette by slot and the reason for each boot argument:
-# README.md#console. LIVE_ARGS go on every entry that starts Linux.
+# docs/CONTRIBUTING.md#console. LIVE_ARGS go on every entry that starts Linux.
 CONSOLE_RED=46,191,163,235,94,180,136,216,174,191,163,235,69,180,143,236
 CONSOLE_GRN=52,97,190,203,129,142,192,222,181,97,190,203,169,142,188,239
 CONSOLE_BLU=64,106,140,139,172,173,208,233,195,106,140,139,218,173,187,244

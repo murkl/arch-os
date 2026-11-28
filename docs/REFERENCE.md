@@ -1,14 +1,40 @@
 # Reference
 
-What Arch OS writes to a disk, and why. The module format is described in **[➜ Runtime](../runtime/README.md)**.
+What Arch OS writes to a disk, and why.
 
 ## Start
 
-The ISO boots into the Installer. A second console (**Ctrl+Alt+F2**) opens either module with `arch-os installer` or `arch-os recovery`. The ISO is a hybrid image, so any USB writer works. **[➜ Arch Wiki](https://wiki.archlinux.org/title/USB_flash_installation_medium)**
+The ISO is a hybrid image, so any USB writer works. It boots into the Installer on tty1. A second console (**Ctrl+Alt+F2**) logs in as root. **[➜ Arch Wiki](https://wiki.archlinux.org/title/USB_flash_installation_medium)**
+
+| Command | Does |
+| --- | --- |
+| `arch-os installer` | Opens the Installer |
+| `arch-os recovery` | Opens the Recovery |
+| `iwctl` | Connects to Wi-Fi |
+
+When the interface stops, tty1 returns to a root login and nothing restarts it. `journalctl -b -u arch-os` names the reason.
+
+### Keys
+
+Each page names its keys in the footer.
+
+| Key | Does |
+| --- | --- |
+| **↑↓**, **j k**, wheel | Choose, scroll |
+| **⇞⇟** | Page up, page down |
+| **g G**, **home end** | First, last |
+| **⏎**, **l**, **→** | What the footer names |
+| **esc**, **h**, **←**, **backspace** | Back |
+| **f**, **/** | Filter |
+| **tab** | Run: details, compact |
+| **r** | Requirement: check again |
+| **q**, **ctrl+c** | Quit |
+
+In a text box, letters are typed and **backspace** deletes one. **ctrl+w** and **alt+backspace** delete the word before, **ctrl+u** everything, and in a password box **alt+backspace** does too. A held key repeats only to move and type.
 
 ### Answers
 
-Every answer except the passwords is saved to `installer.conf` as soon as it is given. An interrupted run resumes with them.
+Every answer except the passwords is saved to `installer.conf` as soon as it is given. An interrupted run resumes with them, also a second run on the ISO.
 
 | Use | How |
 | --- | --- |
@@ -31,14 +57,7 @@ Every command that changes the system is shown and recorded in three places.
 2. Boot the ISO, connect to the internet and open a shell with **Ctrl+Alt+F2**
 3. Run `bash installer.sh`
 
-The script has four parts.
-
-| Part | Does |
-| --- | --- |
-| Head | Stops outside a live system. Stops where the disk's name points at another disk, compared by model, serial and size. Loads the console keyboard |
-| Passwords | Asks as the Installer does, or reads `ARCH_OS_PASSWORD` and `ARCH_OS_DISK_PASSWORD` |
-| Confirmation | Names the disk and opens on **No** |
-| Commands | Runs the commands of each task that succeeded, under the task's title. A failed command stops the script |
+The script stops outside a live system and where the disk's name points at another disk. It asks for the passwords, or reads `ARCH_OS_PASSWORD` and `ARCH_OS_DISK_PASSWORD`, and names the disk in a question that opens on **No**. A failed command stops it.
 
 Two things differ from the original run.
 
@@ -53,16 +72,16 @@ Arch OS takes a whole disk on a UEFI machine and partitions it with GPT. It is t
 
 ### Partitions
 
-| Partition | Size | Type | Label | Mounted |
+| Partition | Name | Size | Type | Mounted |
 | --- | --- | --- | --- | --- |
-| 1 | 1 GiB | EFI system (`ef00`) | `BOOT` | `/boot`, `fmask=0077,dmask=0077` |
-| 2 | The rest | Linux x86-64 root (`8304`) | `BTRFS` | `/` |
-| 3 | 1 GiB, twice the image | Linux (`8300`) | None | Never. **[➜ Recovery Partition](#recovery-partition)** |
+| 1 | `boot` | 1 GiB | EFI system (`ef00`), FAT labeled `BOOT` | `/boot`, `fmask=0077,dmask=0077` |
+| 2 | `root` | The rest | Linux x86-64 root (`8304`), btrfs labeled `BTRFS` | `/` |
+| 3 | `recovery` | 1 GiB, twice the image | Linux (`8300`) | Never. **[➜ Recovery Partition](#recovery-partition)** |
 
 - The root partition type follows the **[Installation guide](https://wiki.archlinux.org/title/Installation_guide#Example_layouts)**, so systemd's tools find the partition
 - Partition 3 exists only with **Recovery**. It lies at the end of the disk, so root stays partition 2
 
-With **Encryption**, partition 2 is a LUKS2 container opened as `cryptroot`. Its password is the account password or a separate one. **[➜ Accounts](#accounts)**
+With **Disk encryption**, partition 2 is a LUKS2 container opened as `cryptroot`. Its password is the account password or a separate one. **[➜ Accounts](#accounts)**
 
 | LUKS2 header flag | Effect |
 | --- | --- |
@@ -84,36 +103,27 @@ With **Encryption**, partition 2 is a LUKS2 container opened as `cryptroot`. Its
 
 - A snapshot of `@` excludes nested subvolumes, so a rollback keeps all six
 - A subvolume created inside `@` later, such as a container image, moves to the new `@` on a rollback
-- All are mounted with `noatime,compress=zstd:1`, as on Fedora. On an older CPU, level 1 costs far less per write than level 3 at almost the same ratio. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)**
-- The layout is defined once in `lib.sh`. The Installer creates every subvolume. The Recovery opens only a disk that has all of them and leaves any other disk untouched
+- All are mounted with `noatime,compress=zstd:1`, as on Fedora. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Btrfs#Compression)**
+- The Recovery opens only a disk that has all of them
 
 ## Boot Chain
 
 systemd-boot starts the system, its fallback and the Recovery. With **Secure Boot**, each entry starts a unified kernel image (UKI) signed with the machine's own keys.
 
-| Part | How | Why |
-| --- | --- | --- |
-| Loader | `bootctl install` runs from the live system. Its firmware entry comes first in the boot order | In a chroot, `bootctl` writes no working firmware entry |
-| UKIs | `/boot/EFI/arch-os/` | In `EFI/Linux` the loader would list each image twice |
-| Menu | Hidden. Holding **Space** shows it | Some firmware passes the key too late, so the Recovery is also in the firmware boot menu |
-| Order | `sort-key arch` and `arch-fallback` | The system comes first, the fallback second. The Recovery sorts by its `os-release` ID |
-| Command line | `kernel_args` in the `bootloader` task, kept in `/etc/kernel/cmdline` | Images and entries share one source. The Recovery rebuilds lost entries from it |
-| Editor | Off | An editable command line is a root shell without a password. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Systemd-boot#Loader_configuration)** |
+| Part | How |
+| --- | --- |
+| Loader | First in the firmware boot order |
+| UKIs | `/boot/EFI/arch-os/` |
+| Menu | Hidden. Holding **Space** shows it, the Recovery is also in the firmware boot menu |
+| Order | System, fallback, Recovery |
+| Command line | `/etc/kernel/cmdline`, shared by images and entries |
+| Editor | Off, since an editable command line is a root shell. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Systemd-boot#Loader_configuration)** |
 
 **Note:** _Firmware entries of earlier systems on the disk are removed with its partitions. Entries of other disks stay._
 
 ### Fallback
 
 Each entry gets three tries. After three failed starts the loader moves on to the next entry. This needs no key, USB stick or network. The fallback image includes every kernel module. **[➜ Automatic Boot Assessment](https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/)**
-
-```mermaid
-flowchart LR
-    S[System] -->|3 failed starts| F[Fallback]
-    F -->|3 failed starts| R[Recovery]
-    R -.->|tries back| S
-
-    style R fill:#1793d1,stroke:#1793d1,color:#fff
-```
 
 A start is good once `boot-complete.target` is reached.
 
@@ -126,11 +136,7 @@ A start is good once `boot-complete.target` is reached.
 | Kernel panic | Failed. `panic=10` restarts the machine, so a system that panics on every start reaches the Recovery |
 | Emergency mode, in the system or its initramfs | Failed. The machine restarts after 10 s. Root has no password, so nobody could use the emergency shell |
 
-The loader counts in the entry's file name.
-
-- Each start takes one try off the name: `main+3.conf` becomes `main+2-1.conf`. An entry without tries, `main+0-3.conf`, sorts last
-- After a good start, `systemd-bless-boot` marks the entry as good and `arch-os-boot-tries.service` restores the tries of both entries
-- `loader.conf` sets no `default`, since a default entry starts however often it failed. Installer and Recovery also clear a default left in the firmware
+A good start restores the tries of both entries. No entry is the default, since a default entry starts however often it failed.
 
 ### Kernel Parameters
 
@@ -146,39 +152,17 @@ The loader counts in the entry's file name.
 | `plymouth.use-simpledrm=0` | Set with encryption. The password prompt waits for the graphics driver instead of appearing twice. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Using_SimpleDRM)** |
 | `plymouth.splash-delay=3` | Set with encryption. Splash and password prompt appear together. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Plymouth#Show_delay)** |
 
-**Note:** _`RebootWatchdogSec=off` in `/etc/systemd/system.conf.d/10-arch-os.conf` belongs to the silent boot. A watchdog armed for the reboot prints `watchdog did not stop!` over the splash._
-
 ### Initramfs
 
 ```
 base systemd keyboard autodetect microcode modconf kms sd-vconsole block [sd-encrypt] filesystems
 ```
 
-| Hook | Why |
-| --- | --- |
-| `keyboard` before `autodetect` | Includes every keyboard driver, not only the one present during the installation |
-| `microcode` | `intel-ucode` or `amd-ucode`, chosen from `/proc/cpuinfo`. Left out in a virtual machine, which gets its microcode from the host |
-| `kms` | Plymouth needs a driver to draw on, so the open graphics drivers are included |
-| No `fsck` | `fsck.btrfs` does nothing at boot |
-
-- The hooks are set in `/etc/mkinitcpio.conf.d/10-arch-os.conf`. `20-` extends them for the boot splash, `30-` and `31-` for NVIDIA
-- With NVIDIA as the only card, `31-` removes `kms`. Otherwise nouveau would load next to NVIDIA's modules. **[➜ Arch Wiki](https://wiki.archlinux.org/title/NVIDIA#Early_loading)**
-- mkinitcpio's pacman hook rebuilds the image whenever an NVIDIA module changes
+The hooks lie in `/etc/mkinitcpio.conf.d/`. `keyboard` comes before `autodetect`, so every keyboard works at the password prompt. With NVIDIA as the only card, `kms` is left out. **[➜ Arch Wiki](https://wiki.archlinux.org/title/NVIDIA#Early_loading)**
 
 ### Secure Boot
 
-Offered only with disk encryption. Without encryption the disk is readable anyway. Only a UKI signs kernel, initramfs and command line as one file.
-
-The Installer sets it up in three steps.
-
-| When | What | Why |
-| --- | --- | --- |
-| First | Creates the keys and signs systemd-boot and the boot images, before any snapshot exists | The keys in `/var/lib/sbctl` are part of `@`. A snapshot without them could sign nothing it rebuilds after a rollback. The Recovery also carries the keys across a rollback |
-| Last | Signs the Recovery, requires a clean `sbctl verify` and enrolls the keys | Once keys are enrolled, the firmware refuses anything unsigned |
-| Afterwards | sbctl's hooks | New boot images are signed as they are built. Updates sign systemd-boot and the Recovery again |
-
-- sbctl's mkinitcpio hook signs each boot image. `sbctl list-files` does not list them, since `sbctl sign -s` records no file that is already signed
-- The kernel the UKIs are built from lies in `/var/lib/arch-os/`, on the encrypted root. On the EFI partition anyone could swap it before the next rebuild signs it. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Unified_kernel_image#.preset_file)**
+Offered only with disk encryption, since without it the disk is readable anyway. The Installer creates the machine's own keys with sbctl and signs loader, UKIs and Recovery. sbctl's hooks sign every image built later.
 
 Keys enroll only in **setup mode**, which is not the same as "Secure Boot disabled".
 
@@ -189,7 +173,7 @@ Keys enroll only in **setup mode**, which is not the same as "Secure Boot disabl
 
 Where sbctl refuses `-f`, the Installer enrolls with `-m` alone. Keys that did not enroll are a warning on the last page. The machine still boots.
 
-#### Turning It On
+### Turning It On
 
 After the first reboot, with **Secure Boot** among the answers:
 
@@ -198,7 +182,7 @@ After the first reboot, with **Secure Boot** among the answers:
 | `✓` | Restart and turn Secure Boot on in the firmware |
 | `✗` | Clear the keys in the firmware, which enters setup mode. Run `sudo sbctl enroll-keys -m -f`, or with `-m` alone where that fails. Restart and turn Secure Boot on |
 
-#### Firmware Updates
+### Firmware Updates
 
 fwupd's updater is signed as `fwupdx64.efi.signed`. `DisableShimForSecureBoot` lets fwupd start it without shim, which Arch does not ship. **[➜ fwupd](https://github.com/fwupd/fwupd/blob/main/plugins/uefi-capsule/README.md)**
 
@@ -218,7 +202,7 @@ Every machine gets the same base.
 | Kernel | `linux-zen` everywhere | One kernel means one set of known problems. It is tuned for responsiveness under load |
 | Swap | zram | **[➜ Arch Wiki](https://wiki.archlinux.org/title/Zram)** |
 | Disk health | `smartd`, with Housekeeping | A disk at risk shows on every terminal and as a critical notification in every session, not only in the journal. **[➜ Arch Wiki](https://wiki.archlinux.org/title/S.M.A.R.T.#Notifying_potential_problems)** |
-| Crash records | `systemd-pstore` | Moves crash records from the small firmware memory to `/var/lib/systemd/pstore`. ISO and Recovery leave them in place. **[➜ systemd-pstore](https://www.freedesktop.org/software/systemd/man/latest/systemd-pstore.service.html)** |
+| Crash records | `systemd-pstore` | Moves crash records from the firmware to `/var/lib/systemd/pstore`. **[➜ systemd-pstore](https://www.freedesktop.org/software/systemd/man/latest/systemd-pstore.service.html)** |
 
 ### Tuning
 
@@ -267,17 +251,7 @@ Graphics drivers come with GNOME. Each card is detected in sysfs. Mesa, `mesa-ut
 
 ### AUR Builds
 
-`paru`, the boot splash theme and the System Manager come from the AUR. Each may fail without stopping the run. The AUR can be down for days, and nothing else depends on them.
-
-| Limit | Value | Why |
-| --- | --- | --- |
-| Attempts | 3 | A retry helps a failed download, not a stuck build |
-| Timeout | 45 min | A build that takes longer hangs |
-| Compile jobs | 1 per GiB of memory, at most 1 per core | More jobs run a live system out of memory |
-
-- `sudo` runs `pacman` without a password during the build, and nothing else. The rule expires by itself (`NOTAFTER`) if the run stops halfway
-- The build runs in its own environment, without the passwords. cargo downloads stay in the build directory
-- `paru` is built from source, since a `-bin` package breaks whenever Arch bumps `libalpm`
+`paru`, the boot splash theme and the System Manager come from the AUR. Each may fail without stopping the run, since the AUR can be down for days and nothing else depends on them. `paru` is built from source, as a `-bin` package breaks whenever Arch bumps `libalpm`.
 
 ### Text Editor
 
@@ -290,8 +264,6 @@ The chosen editor gets a small configuration in the account's home and in root's
 | `neovim` | `~/.config/nvim/init.lua` | Line numbers, 4 spaces, smart-case search, persistent undo |
 | `micro` | `~/.config/micro/settings.json` | `atom-dark`, 4 spaces, changes in the gutter, cursor and undo kept |
 | `helix` | `~/.config/helix/config.toml` | `nord`, mode colors, bar cursor, tabs, indent guides, soft wrap |
-
-**Note:** _Vim's file is `~/.vim/vimrc`, since Vim reads `~/.config/vim/` only with `XDG_CONFIG_HOME` set._
 
 ## Accounts
 
@@ -346,12 +318,7 @@ The browser gets what its language and media support need.
 
 ### Out of Memory
 
-`systemd-oomd` stops one app before GNOME freezes. GNOME runs each app in its own scope, so nothing else is hit. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Improving_system_responsiveness_under_low-memory_conditions)**
-
-| Unit | Setting | Acts when |
-| --- | --- | --- |
-| `-.slice` | `ManagedOOMSwap=kill` | Memory and swap are both over 90 %. The unit using the most swap is killed |
-| `user@.service` | `ManagedOOMMemoryPressure=kill`, limit `50%` | The session stalls on memory half the time for 30 s. This is Fedora's limit, below systemd's 60 % |
+`systemd-oomd` stops one app before GNOME freezes, when memory and swap run full or the session stalls on memory. GNOME runs each app in its own scope, so nothing else is hit. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Improving_performance#Improving_system_responsiveness_under_low-memory_conditions)**
 
 ### Defaults
 
@@ -395,7 +362,6 @@ nmcli connection modify <name> connection.zone home
 An installed system needs no internet until the next update.
 
 - Mirror ranking and keyring refresh are skipped while archlinux.org is unreachable, so `systemctl --failed` stays empty
-- Each of the two has an `online.conf` drop-in that checks with `ExecCondition=` and logs a skip to the journal
 - The Recovery repairs from what the system holds, without downloads
 
 **Note:** _After months offline, update the keyring first: `sudo pacman -Sy archlinux-keyring && sudo pacman -Su`. **[➜ Arch Wiki](https://wiki.archlinux.org/title/Pacman/Package_signing#Upgrade_system_regularly)**_
@@ -412,12 +378,12 @@ Snapper takes snapshots of `@` on two occasions and at no other time.
 - The boot snapshot also holds changes made by hand, such as an edited file in `/etc`, and shows a system that started
 - It has no cleanup algorithm, so the limit of the package snapshots leaves it alone
 
-| Setting | Value | Why |
-| --- | --- | --- |
-| Timeline | Off | Between transactions mostly data changes. A timeline keeps every version of disk images and databases. openSUSE's root configuration avoids it too |
-| `NUMBER_LIMIT` | 10 | Snapper's defaults filled 70 GiB for a 35 GiB system |
-| `ALLOW_GROUPS` | None | snapperd runs as root, so an allowed group could delete every snapshot without a password. `sudo snapper list` lists them |
-| Cleanup | `snapper-cleanup.timer` | Enforces the limit |
+| Setting | Value |
+| --- | --- |
+| Timeline | Off, since it keeps every version of disk images and databases |
+| `NUMBER_LIMIT` | 10 |
+| `ALLOW_GROUPS` | None, so `sudo snapper list` lists them |
+| Cleanup | `snapper-cleanup.timer` |
 
 ### Rollback
 
@@ -435,7 +401,7 @@ The Recovery repairs a system that no longer starts. It runs from its own partit
 | Partition | **Arch OS Recovery** in the boot menu, in the firmware boot menu (**F12** on most machines), or **Recovery** in the app grid. Works with Secure Boot on |
 | ISO | `arch-os recovery` on another console (**Ctrl+Alt+F2**), with Secure Boot off |
 
-From the ISO it asks for keyboard and disk. On its partition it asks for neither. Everything else is read from the disk. **[➜ Recovery](../recovery/README.md#answers)**
+From the ISO it asks for keyboard and disk. On its partition it asks for neither. Everything else is read from the disk, passwords are asked right before they are needed and never saved.
 
 - Before it writes to the EFI partition, it checks it with `fsck.fat`, as the system does at boot
 - It repairs what the Installer of its release series creates, and needs no network for that. **Connect to Wi-Fi** on the dashboard is there for an update or for a download in the shell
@@ -453,33 +419,18 @@ The partition holds the Recovery of the release that installed the system. The I
 | `recovery.efi` | `/boot/EFI/Linux/arch-os-recovery.efi` | The UKI. Its firmware entry stays outside the boot order, since Insyde firmware moves any entry there to the front for good |
 | `recovery.img` | Partition 3, byte for byte | A read-only erofs with its signature. The system never mounts it, and the file manager does not show it |
 
-It boots in six steps.
-
-1. The loader starts the image. Under Secure Boot it is signed with the machine's keys
-2. The initramfs finds the partition by a UUID unique to each build
-3. The initramfs verifies the root against a certificate whose key was deleted after the build. The certificate is valid from 1970 to 9999, so a dead clock battery does not break it
-4. The root is copied to memory, which frees the disk
-5. Plymouth draws on the firmware framebuffer (`nomodeset`). The Recovery runs on tty1 and sets its clock by network time, which HTTPS needs after a dead clock battery
-6. The Recovery reads `EFI/arch-os-recovery/` on the EFI partition it started from, restores the tries of the system's entries and opens in the Installer's language and keyboard
-
-It runs as a kiosk.
-
-- tty1 belongs to the Recovery. No console has a login, a serial one included, and root is locked
-- **Start over** or a crash restarts it with every answer kept (`RestartMode=direct`)
+Its root is verified against a key deleted after the build and copied to memory, which frees the disk. It opens in the Installer's language and keyboard and runs as a kiosk: no console has a login, and **Start over** or a crash restarts it with every answer kept.
 
 **Note:** _The EFI partition is unsigned, so what the Recovery reads there is checked like any answer from a file._
 
-#### Update
+### Update
 
 **Update the Recovery** on the dashboard checks the GitHub releases and installs after a confirmation that opens on **No**.
 
 | Rule | Detail |
 | --- | --- |
-| Within its series only | 2.1.0 updates to 2.4.1, never to 3.0.0, whose Recovery may not repair this layout |
-| From the ISO too | The ISO updates the disk's Recovery where that is older or no longer starts. This is the way back after an interrupted update |
-| Checked first | Download, checksum and size are checked before the partition is touched |
-| Signed | An encrypted system is opened. Where it has `sbctl`, its keys sign the new image |
-| Safe against a power cut | The partition is written and read back, then the boot image is replaced. After a power cut in between, the system starts as before |
-| Same partition | It keeps its PARTUUID and stays hidden from the file manager |
+| Within its series only | 2.1.0 updates to 2.4.1, never to 3.0.0 |
+| From the ISO too | The ISO updates a Recovery that is older or no longer starts |
+| Safe against a power cut | The system starts as before |
 
-**Note:** _Releases before 2.1 are not supported. A 2.0 Recovery with Secure Boot and disk encryption needs 4 GiB of memory to update itself. With less memory, the ISO updates it._
+**Note:** _A 2.0 Recovery with Secure Boot and disk encryption updates itself only with 4 GiB of memory. With less, the ISO updates it._

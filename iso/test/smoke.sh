@@ -1,7 +1,7 @@
 #!/bin/bash
 # Boots a built image until its interface answers a key, proving the boot chain
 # no linter sees. Reads the interface's trace on a virtio port, not the screen.
-# See README.md.
+# See docs/CONTRIBUTING.md#boot-tests.
 #
 #   smoke.sh <image.iso | recovery-dir>
 set -eu
@@ -27,7 +27,7 @@ OVMF_CODE="${OVMF_CODE:-/usr/share/edk2/x64/OVMF_CODE.4m.fd}"
 OVMF_VARS="${OVMF_VARS:-/usr/share/edk2/x64/OVMF_VARS.4m.fd}"
 
 for tool in qemu-system-x86_64 od; do
-    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
+    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see docs/CONTRIBUTING.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs a built ISO end to end, unattended: install, boot, repair, boot again,
-# start the Recovery and write it again. See README.md.
+# start the Recovery and write it again. See docs/CONTRIBUTING.md#boot-tests.
 #
 #   e2e.sh <image.iso> [core|desktop]
 set -eu
@@ -42,7 +42,7 @@ PASSWORD=e2e-arch-os
 DISK=/dev/vda
 
 for tool in qemu-system-x86_64 qemu-img ssh ssh-keygen tesseract shellcheck; do
-    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see README.md" >&2 && exit 1; }
+    command -v "$tool" >/dev/null || { echo "Error: ${tool} not found, see docs/CONTRIBUTING.md" >&2 && exit 1; }
 done
 [ -f "$OVMF_CODE" ] || { echo "Error: no OVMF firmware at ${OVMF_CODE}. Install edk2-ovmf." >&2 && exit 1; }
 
