@@ -76,9 +76,9 @@ MODULE_PROGRAMS := installer/tasks/housekeeping/data/smartd-notify
 
 MODULE_DESKTOP = $(shell find $(MODULES) -name '*.desktop')
 
-# Everything that can reach the console. READMEs and fastfetch's config target a
-# graphical terminal.
-MODULE_TEXT = product.yaml $(wildcard locales/*.po) $(LIBRARY) $(shell find $(MODULES) -type f ! -name '*.md' ! -name fastfetch.jsonc)
+# Everything that can reach the console. fastfetch's config targets a graphical
+# terminal.
+MODULE_TEXT = product.yaml $(wildcard locales/*.po) $(LIBRARY) $(shell find $(MODULES) -type f ! -name fastfetch.jsonc)
 
 # Each module's check of its data/, and a task's check of a program it ships.
 DATA_CHECKS = $(wildcard $(addsuffix /data/check.sh,$(MODULES)) $(addsuffix /tasks/*/check.sh,$(MODULES)))
@@ -130,7 +130,7 @@ smoke-iso:
 smoke-recovery:
 	$(ISO_SMOKE) $(RECOVERY)
 
-# Installs the newest ISO through its interface: iso/README.md. Logs land in
+# Installs the newest ISO through its interface: docs/CONTRIBUTING.md#boot-tests. Logs land in
 # dist/e2e/.
 e2e:
 	$(ISO_E2E) $(ISO) $(START)

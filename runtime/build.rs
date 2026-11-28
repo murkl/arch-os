@@ -12,7 +12,7 @@ fn files(dir: &Path, prefix: &str, out: &mut Vec<String>) {
     entries.sort_by_key(|e| e.file_name());
     for e in entries {
         let name = e.file_name().into_string().unwrap();
-        if ["check.sh", "check.zsh", "README.md"].contains(&name.as_str()) {
+        if ["check.sh", "check.zsh"].contains(&name.as_str()) {
             continue;
         }
         let path = format!("{prefix}{name}");

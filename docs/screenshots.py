@@ -44,7 +44,7 @@ PAD, RADIUS, SCALE = 26, 10, 2
 LEAD = (LINE_PX - FONT_PX) / 2  # room a line box keeps above and below the text
 
 # The console's sixteen slots as the images set them, so a picture matches the
-# console: iso/README.md#console.
+# console: docs/CONTRIBUTING.md#console.
 def console_slots():
     build = (pathlib.Path(__file__).resolve().parent.parent / "iso/build.sh").read_text()
     channels = []

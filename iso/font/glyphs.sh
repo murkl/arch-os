@@ -1,7 +1,7 @@
 #!/bin/bash
 # Checks every character that reaches the console, in the files given and in
 # what the program draws itself, against the fonts build.sh beside it builds.
-# See README.md.
+# See docs/CONTRIBUTING.md#console-glyphs.
 #
 #   font/glyphs.sh <arch-os> <file>...
 set -eu

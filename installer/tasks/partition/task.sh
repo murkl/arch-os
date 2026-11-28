@@ -26,8 +26,8 @@ fi
 boot_part="$(boot_partition "$ARCH_OS_DISK")"
 system_part="$(system_partition "$ARCH_OS_DISK")"
 
-# Closes what an earlier attempt left mounted or open:
-# docs/CONTRIBUTING.md#closing-the-target
+# Closes what an earlier attempt left mounted or open, so a second attempt starts
+# from whatever the first one left.
 swapoff -a || true
 sync
 unmount_target
