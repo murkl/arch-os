@@ -6,6 +6,20 @@ fi
 run arch-chroot "$MNT" ln -sf "/usr/share/zoneinfo/${ARCH_OS_TIMEZONE}" /etc/localtime
 run arch-chroot "$MNT" hwclock --systohc
 
+# Without a country the radio keeps the world domain, which allows the fewest
+# channels. The time zone names the country, and set-wireless-regdom sources
+# this file, so the appended line wins.
+# https://wiki.archlinux.org/title/Network_configuration/Wireless#Respecting_the_regulatory_domain
+regdom="${MNT}/etc/conf.d/wireless-regdom"
+country="$(awk -F'\t' -v zone="$ARCH_OS_TIMEZONE" '$3 == zone { print $1 }' "${MNT}/usr/share/zoneinfo/zone.tab")"
+if [ ! -f "$regdom" ]; then
+    echo "no wireless-regdb, skipping the regulatory domain"
+elif [ -z "$country" ] || ! grep -qxF "#WIRELESS_REGDOM=\"${country}\"" "$regdom"; then
+    echo "no regulatory domain for ${ARCH_OS_TIMEZONE}, keeping the world domain"
+else
+    printf 'WIRELESS_REGDOM="%s"\n' "$country" | write_file -a "$regdom"
+fi
+
 render "$(where)/locale.conf" LOCALE="$ARCH_OS_LOCALE_LANG" | write_file "${MNT}/etc/locale.conf"
 
 # The chosen locale and en_US, UTF-8 only. Edited in place, since locale-gen
