@@ -20,17 +20,13 @@ Each page names its keys in the footer.
 
 | Key | Does |
 | --- | --- |
-| **↑↓**, **j k**, wheel | Choose, scroll |
-| **⇞⇟** | Page up, page down |
-| **g G**, **home end** | First, last |
-| **⏎**, **l**, **→** | What the footer names |
-| **esc**, **h**, **←**, **backspace** | Back |
-| **f**, **/** | Filter |
-| **tab** | Run: details, compact |
-| **r** | Requirement: check again |
-| **q**, **ctrl+c** | Quit |
-
-In a text box, letters are typed and **backspace** deletes one. **ctrl+w** and **alt+backspace** delete the word before, **ctrl+u** everything, and in a password box **alt+backspace** does too. A held key repeats only to move and type.
+| `↑` `↓` | Choose, also `j` `k` |
+| `⏎` | Open, also `l` |
+| `esc` | Back, also `backspace` `h` |
+| `f` | Filter |
+| `tab` | Details of a run |
+| `r` | Check a requirement again |
+| `q` | Quit, also `ctrl+c` |
 
 ### Answers
 
@@ -47,7 +43,7 @@ Every command that changes the system is shown and recorded in three places.
 
 | Place | Form |
 | --- | --- |
-| **tab** | A box named after the step, above the command's output |
+| `tab` | A box named after the step, above the command's output |
 | `installer.log` | One line per command |
 | `installer.sh` | A script of all commands |
 
