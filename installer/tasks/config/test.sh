@@ -2,6 +2,11 @@ grep -qx "LANG=${ARCH_OS_LOCALE_LANG}.UTF-8" "${MNT}/etc/locale.conf"
 # Inside the new system: from outside, the absolute link resolves into the live
 # system.
 arch-chroot "$MNT" test -f /etc/localtime
+# Read the way set-wireless-regdom reads it: a listed country or none.
+if [ -f "${MNT}/etc/conf.d/wireless-regdom" ]; then
+    regdom="$(bash -c '. "$1" && echo "${WIRELESS_REGDOM:-}"' _ "${MNT}/etc/conf.d/wireless-regdom")"
+    [ -z "$regdom" ] || grep -qxF "#WIRELESS_REGDOM=\"${regdom}\"" "${MNT}/etc/conf.d/wireless-regdom"
+fi
 sysctl_keys_exist "${MNT}/etc/sysctl.d/99-vm-zram-parameters.conf"
 arch-chroot "$MNT" systemctl is-enabled btrfs-scrub@-.timer >/dev/null
 arch-chroot "$MNT" systemctl is-enabled paccache.timer >/dev/null
